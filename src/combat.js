@@ -9,7 +9,7 @@ Game.Combat = {
     const dx = def.x - att.x;
     if (Math.sign(dx || att.facing) !== att.facing) return null; // sirtina vuramaz
     if (Math.abs(dx) > a.reach) return null;
-    if (Math.abs(def.y - att.y) > 70) return null;
+    if (Math.abs(def.y - att.y) > 95) return null; // juggle payi: havadaki rakip vurulabilir
     if (!def.isVulnerable()) return null;
 
     att.attackHasHit = true;
@@ -19,18 +19,44 @@ Game.Combat = {
 
     if (def.isBlocking()) {
       att.lastHitBlocked = true;
+      // PARRY: blogun ilk anlarinda karsilanan vurus savusturulur, saldirgan açilir
+      if (def.stateTime < 0.12) {
+        att.attack = null;
+        att.kvx = -dir * 120;
+        att.enterState('staggered');
+        def.addMomentum(14);
+        return { type: 'parry', who: def, x: def.x - dir * 20, y: fxY };
+      }
       // kosu vurusu blok edilirse daha sert iter; saldirgan momentum kaybeder
       def.x += dir * (a.lunge > 200 ? 26 : 14);
       def.addMomentum(MO.blockGain);
       att.addMomentum(MO.blockedPenalty);
-      return { type: 'block', x: def.x - dir * 20, y: fxY };
+      return { type: 'block', who: att, x: def.x - dir * 20, y: fxY };
     }
 
-    const dmg = Math.round(a.damage * att.strikeMult * (att.blazinTime > 0 ? Game.BLAZIN.strikeMult : 1));
+    // kombo hasar ölçeklemesi: zincirdeki her ek vurus zayiflar (sonsuz kombo yok)
+    let dmg = a.damage * att.strikeMult * (att.blazinTime > 0 ? Game.BLAZIN.strikeMult : 1);
+    dmg *= Math.max(0.4, Math.pow(0.85, att.chainCount));
+    // isimli hedef kombo bitiricisi: bonus hasar, duvardaysa sektirme
+    let comboName = null;
+    let bounce = false;
+    const nc = att.namedCombo;
+    if (nc && att.chainCount === nc.seq.length - 1) {
+      comboName = nc.name;
+      dmg *= nc.bonus === 'damage' ? 1.45 : 1.35;
+      const A = Game.ARENA;
+      if (nc.bonus === 'bounce' && def.y === 0 && (def.x - A.left < 140 || A.right - def.x < 140)) bounce = true;
+    }
+    dmg = Math.round(dmg);
     def.takeHit({ ...a, damage: dmg }, dir);
+    if (bounce && def.hp > 0 && def.state !== 'launched') {
+      // duvar sektirmesi: rakip geri seker -> bir vurusluk ek pencere
+      def.kvx = -dir * 300;
+      def.enterState('staggered');
+    }
     att.addMomentum(MO.hitGive);
     def.addMomentum(MO.hitTake); // hasar yiyen de bar doldurur (comeback)
-    return { type: 'hit', attack: a, chain: att.chainCount, x: def.x - dir * 15, y: fxY };
+    return { type: bounce ? 'bounce' : 'hit', attack: a, dmg, chain: att.chainCount, comboName, who: att, x: def.x - dir * 15, y: fxY };
   },
 
   // Tutma denemesi: blogu DELER. BLAZIN aktifse sinematik özel harekete dönüsür.
@@ -64,7 +90,11 @@ Game.Combat = {
     def.attack = null;
     def.enterState('held');
     def.facing = -att.facing;
-    return { type: 'grab', x: def.x, y: fxY };
+    // vurus zincirinden baglanan isimli tutus kombosu (Boga Dalisi, Örümcek Agi)
+    const comboName = att.grabComboName || null;
+    att.grabComboName = null;
+    if (comboName) att.addMomentum(10);
+    return { type: 'grab', comboName, who: att, x: def.x, y: fxY };
   },
 
   // Tutus sürerken: salla (yumruk), stil özel hamlesi (tekme),

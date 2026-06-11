@@ -168,6 +168,12 @@ Game.AI = class {
         this.push({ [key]: true }, 0.05);
       }
     }
+    // grappler stiller zinciri tutusa baglamayi dener (Boga Dalisi vb.)
+    const cancels = (this.f.styleData.cancels && this.f.styleData.cancels.punch) || [];
+    if (key === 'punch' && cancels.includes('grapple') && this.rng() < 0.5) {
+      this.push({}, 0.1);
+      this.push({ grapple: true }, 0.05);
+    }
   }
 
   // tutus sürerken: salla, stil özel hamlesi yap ya da en yakin duvara firlat

@@ -76,6 +76,7 @@ Game.drawFighter = function (ctx, f, t, opts = {}) {
   else if (f.state === 'getup') lie = 1 - Math.min(1, f.stateTime / 0.35);
   ctx.rotate(-lie * Math.PI / 2);
   if (f.state === 'thrown') ctx.rotate(-f.stateTime * 8);
+  else if (f.state === 'launched') ctx.rotate(-0.55 - f.stateTime * 0.8);
   else if (f.state === 'staggered') ctx.rotate(Math.sin(f.stateTime * 18) * 0.14);
   else if (f.state === 'crowdhold') ctx.rotate(-0.28);
   else if (f.state === 'held') ctx.rotate(-0.1);

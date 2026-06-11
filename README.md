@@ -80,6 +80,11 @@ node --test test/combat.test.js test/ai.test.js
       senkron (gerilme→temas→toparlanma), 85 ms poz harmanlama (ani geçiş yok),
       bölgesel hasar tepkileri (kafa/gövde/diz), stile özel yürüyüş gait'i ve blok,
       tutuş boğuşması/suplex kavisi/kalkış koreografileri
-- [ ] Sprint 6B — Oynanış: girdi tamponu, kaçınma/parry, juggle, hibrit kombo sistemi
+- [x] **Sprint 6B — Oynanış: akıcılık + stil komboları:** girdi tamponu (0.25 sn, basış
+      yutulmaz), kaçınma (blok+yön, i-frame) + PARRY (bloğun ilk 0.12 sn'si), launcher/
+      juggle hava komboları, stile göre zincir-iptal ağları (grappler zinciri TUTUŞA
+      bağlanır), 10 isimli hedef kombo (Kaldırım Klasiği, Boğa Dalışı...), hasar
+      ölçekleme ×0.85ⁿ, momentum harcayan zincir uzatma, duvar sektirme bitiricileri,
+      kombo sayacı UI
 - [ ] Sprint 6C — Sunum: dinamik kamera, smear/darbe kareleri, partikül/decal, rim light
 - [ ] Sprint 7 — Kariyer modu *(tam oyun döngüsü, ertelendi)*

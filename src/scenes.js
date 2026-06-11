@@ -54,9 +54,9 @@ Game.scenes.menu = {
     ctx.fillStyle = '#55556a';
     ctx.fillText('P1: A/D yürü (çift dokun: KOS) · W zipla · J yumruk · K tekme · L tut · S blok · BOSLUK blazin', W / 2, 360);
     ctx.fillText('P2: Oklar (çift dokun: KOS) · , yumruk · . tekme · / tut · asagi blok · SAG SHIFT blazin', W / 2, 386);
-    ctx.fillText('Kosarken vurus = dalis yumrugu / uçan tekme · Isabet eden vurus zincire baglanir (KOMBO)', W / 2, 412);
-    ctx.fillText('Tutunca: yumruk = salla · tekme = STIL ÖZEL HAMLESI · tutma = firlat (+yön)', W / 2, 438);
-    ctx.fillText('2 round alan maçi kazanir · Momentum dolunca BOSLUK = BLAZIN! · ESC menü', W / 2, 464);
+    ctx.fillText('Isabet eden vurus zincire baglanir · Grappler: zincir sonu TUT = Boga Dalisi/Örümcek Agi', W / 2, 412);
+    ctx.fillText('Blok basiliyken yön dokunusu = KAÇINMA · Tam zamanli blok = PARRY · Launcher = hava kombosu', W / 2, 438);
+    ctx.fillText('Tutunca: yumruk=salla · tekme=ÖZEL · tutma=firlat · 2 round kazanan alir · BOSLUK=BLAZIN', W / 2, 464);
   },
 };
 
@@ -250,7 +250,23 @@ Game.scenes.match = {
     this.koByBlazin = false;
     this.blazinWindow = 0;
     this.tape = []; // K.O. tekrari için son ~3.5 sn kayit
+    this.comboUi = { p1: { n: 0, dmg: 0, t: 0 }, p2: { n: 0, dmg: 0, t: 0 } };
     Game.events.length = 0;
+  },
+
+  // kombo sayacini güncelle (vuran tarafa göre)
+  trackCombo(ev) {
+    if (!ev.who) return;
+    const side = ev.who === this.p1 ? 'p1' : 'p2';
+    const cu = this.comboUi[side];
+    if (ev.chain > 0 && cu.n > 0) {
+      cu.n = ev.chain + 1;
+      cu.dmg += ev.dmg || 0;
+    } else {
+      cu.n = 1;
+      cu.dmg = ev.dmg || 0;
+    }
+    cu.t = 1.3;
   },
 
   update(dt) {
@@ -387,13 +403,41 @@ Game.scenes.match = {
     const AU = Game.Audio;
     switch (ev.type) {
       case 'hit':
+      case 'bounce':
         this.hitstop = ev.attack.hitstop;
         this.shake = ev.attack.shake;
         this.spawnSparks(ev.x, ev.y, 9, '#ffb347');
-        AU.play(ev.attack.knockdown ? 'heavy' : 'hit');
+        AU.play(ev.attack.knockdown || ev.attack.launcher ? 'heavy' : 'hit');
         this.bumpHype(ev.attack.knockdown ? 0.3 : 0.12);
+        this.trackCombo(ev);
         if (!this.firstBlood) { this.firstBlood = true; this.addAnno('ILK KAN!'); }
-        if (ev.chain === 2) { this.addAnno('KOMBO x3!'); AU.cheer(0.3); this.bumpHype(0.3); }
+        if (ev.comboName) {
+          // isimli hedef kombo patladi!
+          this.addAnno(ev.comboName.toUpperCase() + '!');
+          this.addText(ev.comboName.toUpperCase() + '!', ev.x, ev.y - 60, '#ffc83c');
+          AU.play('special');
+          AU.cheer(0.5);
+          this.bumpHype(0.5);
+        }
+        if (ev.type === 'bounce') {
+          this.shake = 10;
+          this.spawnSparks(ev.x, ev.y, 14, '#ff6b6b');
+          this.addText('DUVARDAN SEKTI!', ev.x, ev.y - 36, '#ff6b6b');
+          AU.play('slam');
+          AU.cheer(0.5);
+        }
+        if (ev.attack.launcher && ev.type === 'hit') this.addText('HAVADA!', ev.x, ev.y - 30, '#aef3ff');
+        break;
+      case 'parry':
+        this.hitstop = 0.08;
+        this.shake = 5;
+        this.spawnSparks(ev.x, ev.y, 10, '#8df0ff');
+        this.addText('PARRY!', ev.x, ev.y - 36, '#8df0ff');
+        this.addAnno('MÜKEMMEL SAVUNMA!');
+        AU.play('block');
+        AU.play('blip');
+        AU.cheer(0.4);
+        this.bumpHype(0.4);
         break;
       case 'block':
         this.hitstop = 0.03;
@@ -403,6 +447,12 @@ Game.scenes.match = {
       case 'grab':
         this.spawnSparks(ev.x, ev.y, 4, '#ffd27a');
         AU.play('grab');
+        if (ev.comboName) {
+          this.addAnno(ev.comboName.toUpperCase() + '!');
+          this.addText(ev.comboName.toUpperCase() + '!', ev.x, ev.y - 50, '#ffc83c');
+          AU.cheer(0.4);
+          this.bumpHype(0.4);
+        }
         break;
       case 'holdhit':
         this.hitstop = 0.05;
@@ -518,6 +568,13 @@ Game.scenes.match = {
       this.anno.life -= dt;
       if (this.anno.life <= 0) this.anno = null;
     }
+    for (const side of ['p1', 'p2']) {
+      const cu = this.comboUi[side];
+      if (cu.t > 0) {
+        cu.t -= dt;
+        if (cu.t <= 0) { cu.n = 0; cu.dmg = 0; }
+      }
+    }
   },
 
   render(ctx, canvas) {
@@ -603,6 +660,25 @@ Game.scenes.match = {
     this.drawBars(ctx, 80, 22, 304, this.p1, false);
     this.drawPortrait(ctx, W - 24 - 48, 14, this.p2, this.wins.p2);
     this.drawBars(ctx, W - 80 - 304, 22, 304, this.p2, true);
+
+    // kombo sayaçlari: "3 VURUS! 21 HASAR"
+    for (const [side, x, align] of [['p1', 86, 'left'], ['p2', W - 86, 'right']]) {
+      const cu = this.comboUi[side];
+      if (cu.n >= 2) {
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, cu.t / 0.3);
+        ctx.font = 'bold 30px Impact, sans-serif';
+        ctx.textAlign = align;
+        ctx.shadowColor = '#ff8c2d';
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = cu.n >= 4 ? '#ffc83c' : '#ff9d4d';
+        ctx.fillText(cu.n + ' VURUS!', x, 130);
+        ctx.font = 'bold 16px monospace';
+        ctx.fillStyle = '#eee6f5';
+        ctx.fillText(cu.dmg + ' HASAR', x, 152);
+        ctx.restore();
+      }
+    }
 
     // anonsör satiri
     if (this.anno) {

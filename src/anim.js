@@ -293,6 +293,8 @@ Game.Anim = (function () {
         return p;
       }
       case 'thrown': return POSES.tumble(s);
+      case 'launched': return POSES.tumble(s);
+      case 'dodge': return P(s, { t: -0.20, cr: 8 });
       case 'hit': {
         const keys = REACT[f.hitRegion || 'mid'](s);
         return sampleKeys(keys, Math.min(1, f.stateTime / Math.max(f.hitstun, 0.2)));

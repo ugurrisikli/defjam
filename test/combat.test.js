@@ -52,11 +52,30 @@ test('menzil disindaki yumruk isabet etmez', () => {
 
 test('blok hasari engeller ve savunani geri iter', () => {
   const [p1, p2] = makePair(50);
+  frames(20, p1, p2, {}, { block: true }); // parry penceresi geçsin, yerlesik blok
   const startX = p2.x;
   const events = frames(30, p1, p2, { punch: true }, { block: true });
   assert.strictEqual(p2.hp, 100);
   assert.strictEqual(events.filter((e) => e.type === 'block').length, 1);
   assert.ok(p2.x > startX, 'blok geri kaydirmali');
+});
+
+test('tam zamanli blok = PARRY: saldirgan sersemler, hasar yok', () => {
+  const [p1, p2] = makePair(50);
+  frames(2, p1, p2, { punch: true }); // vurus yolda
+  const events = frames(30, p1, p2, {}, { block: true }); // blok tam vurus gelirken basilir
+  assert.strictEqual(events.filter((e) => e.type === 'parry').length, 1);
+  assert.strictEqual(p2.hp, 100);
+  assert.strictEqual(p1.state, 'staggered');
+});
+
+test('kaçinma (blok+yön) i-frame verir ve vurustan kaçirir', () => {
+  const [p1, p2] = makePair(50);
+  const startX = p2.x;
+  const events = frames(30, p1, p2, { punch: true }, { block: true, right: true });
+  assert.strictEqual(events.filter((e) => e.type === 'hit').length, 0);
+  assert.strictEqual(p2.hp, 100);
+  assert.ok(p2.x > startX + 30, 'kaçinma adimi mesafe açmali');
 });
 
 test('güçlü vurus yere düsürür, düsen toparlanip ayaga kalkar', () => {
@@ -277,8 +296,53 @@ test('isabet eden vurus toparlanmada zincire baglanir (3lü kombo)', () => {
     total = total.concat(frames(7, a, b));
   }
   total = total.concat(frames(40, a, b));
-  hits = total.filter((e) => e.type === 'hit').length;
-  assert.strictEqual(hits, 3, 'sokak stili en fazla 3lü zincir vurmali');
+  const hitEvents = total.filter((e) => e.type === 'hit');
+  // girdi tamponu sayesinde 5 basisin 5'i de vurusa dönüsür...
+  assert.strictEqual(hitEvents.length, 5, 'tampon hiç basis yutmamali');
+  // ...ama tek zincir 3'te kesilir (4. vurus yeni kombo olarak baslar)
+  assert.strictEqual(Math.max(...hitEvents.map((e) => e.chain)), 2, 'zincir limiti 3 vurus');
+  // hasar ölçekleme: 6+5+4 (zincir) + 6+5 (yeni zincir) = 26
+  assert.strictEqual(b.hp, 100 - 26);
+});
+
+test('güres zinciri tutusa baglanir: P-P-TUT = Boga Dalisi', () => {
+  const g1 = new Game.Fighter({ name: 'G', x: 400, facing: 1, color: '#fff', accent: '#fff', style: 'gures' });
+  const g2 = new Game.Fighter({ name: 'D', x: 450, facing: -1, color: '#fff', accent: '#fff' });
+  let events = [];
+  events = events.concat(frames(1, g1, g2, { punch: true }));
+  events = events.concat(frames(8, g1, g2));
+  events = events.concat(frames(1, g1, g2, { punch: true }));
+  events = events.concat(frames(8, g1, g2));
+  events = events.concat(frames(1, g1, g2, { grapple: true }));
+  events = events.concat(frames(25, g1, g2));
+  const grab = events.find((e) => e.type === 'grab');
+  assert.ok(grab, 'zincirden tutusa baglanmali');
+  assert.strictEqual(grab.comboName, 'Boga Dalisi');
+  assert.strictEqual(g1.state, 'hold');
+});
+
+test('launcher rakibi havaya kaldirir, havadaki rakibe vurus baglanir', () => {
+  const s1 = new Game.Fighter({ name: 'S', x: 400, facing: 1, color: '#fff', accent: '#fff', style: 'sanat' });
+  const s2 = new Game.Fighter({ name: 'D', x: 450, facing: -1, color: '#fff', accent: '#fff' });
+  let events = frames(24, s1, s2, { kick: true }); // Dönen Tekme (launcher)
+  assert.ok(events.some((e) => e.type === 'hit'), 'launcher isabet etmeli');
+  events = events.concat(frames(1, s1, s2, { punch: true }));
+  events = events.concat(frames(12, s1, s2));
+  assert.strictEqual(events.filter((e) => e.type === 'hit').length, 2, 'hava vurusu baglanmali');
+  events = events.concat(frames(70, s1, s2));
+  assert.ok(['down', 'getup', 'idle'].includes(s2.state), 'juggle yere düsüsle biter');
+  // hava vurusu tekme->yumruk iptaliyle ZINCIR olarak baglanir: 5 * 0.95 * 0.85 = 4
+  assert.strictEqual(s2.hp, 100 - 9 - 4);
+});
+
+test('toparlanma sirasinda basilan tus tamponlanir ve atesleniyor', () => {
+  const [p1, p2] = makePair(50);
+  frames(1, p1, p2, { punch: true });
+  frames(3, p1, p2); // hâlâ vurus animasyonunda (iskalamadi, isabetli)
+  frames(1, p1, p2, { kick: true }); // toparlanmadan ÖNCE basildi
+  const events = frames(40, p1, p2);
+  // kick tamponda bekledi, zincir penceresinde atelendi
+  assert.ok(events.some((e) => e.type === 'hit' && e.attack.name === 'Çevirme Yumruk'));
 });
 
 test('iskalayan/bloklanan vurus zincire baglanamaz', () => {
