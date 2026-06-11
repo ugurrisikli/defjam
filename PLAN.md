@@ -192,7 +192,65 @@ Her sprint sonunda çalışan, denenebilir bir şey çıkar. Oyun **Sprint 2 son
 - Arena derinliği ve ışıklandırma cilası.
 - **Kabul:** Karakterler "çöp adam" değil "dövüşçü" gibi görünüyor.
 
-### Sprint 6 — Kariyer Modu ✅ *Tam oyun döngüsü*
+### Sprint 6 — DÖVÜŞ 2.0 (kariyer ertelendi: önce çekirdek sistem tavana)
+
+> Hedef: animasyon, oynanış ve sunumda "tarayıcı oyunu" hissinden "gerçek dövüş
+> oyunu" hissine sıçramak. Canvas 2D + sıfır bağımlılık korunur. Üç aşamada
+> teslim edilir; her aşama sonunda oynanabilir dosya çıkar.
+
+#### 6A — Keyframe Animasyon Motoru
+- **Kanal tabanlı iskelet:** gövde eğimi, çömelme, kafa, ön/arka kol (dirsek+el),
+  ön/arka bacak (diz+ayak) = ~20 sayısal kanal. Çizici yalnızca kanalları okur.
+- **Klip sistemi:** her hareket = anahtar pozlar dizisi `{t, poz, easing}`.
+  Easing: linear/easeOut/easeIn/**outBack (taşma = follow-through)**.
+  Saldırı klipleri frame-data'ya senkron üretilir: 0 → gard, hazırlık sonu →
+  **anticipation** (gerilme), aktif son → tam uzanma (outBack), 1 → toparlanma.
+- **Geçiş harmanlama:** state değişiminde eski pozdan yeni klibe 80 ms blend —
+  ani poz atlamaları tamamen biter (akıcılığın görünmez kahramanı).
+- **Bölgesel hasar tepkisi:** her vuruşun bölgesi var (high/mid/low) →
+  kafa sarsılması / gövde kıvrılması / diz bükülmesi ayrı klipler.
+- **Stile özel yürüyüş/blok:** gait parametreleri (adım boyu, zıplama, tempo) —
+  güreşçi ağır basar, sanatçı süzülür, kickboxcu seker; blok duruşu stile özgü.
+- **Tutuş/fırlatma koreografisi:** boğuşma döngüsü, savurma yayı, suplex kavisi,
+  kalkış animasyonu kliplenir.
+
+#### 6B — Oynanış: Akıcılık + Stil Komboları
+- **Girdi tamponu:** saldırı/toparlanma sırasında basılan tuş 0.25 sn kuyrukta
+  bekler, ilk geçerli anda (iptal penceresi/state sonu) otomatik ateşlenir.
+- **Kaçınma + parry:** blok basılıyken yön dokunuşu = i-frame'li kısa kaçınma
+  adımı; bloğun ilk ~0.12 sn'sinde gelen vuruş = **PARRY** → rakip 0.5 sn açık.
+- **Hava kombosu (juggle):** launcher vuruşlar rakibi havaya kaldırır
+  ('launched' durumu); havadaki rakibe ek vuruş bağlanır, her vuruş hafif
+  yukarı iter, yere inince down.
+- **Hibrit kombo sistemi:**
+  - *Zincir-iptal ağı (stile göre):* Sokak L→L→L→H; Kickbox L→L→H (launcher);
+    Güreş L→L→**TUTUŞ**; Sanat L→L→L→H (launcher); Submission L→L→**TUTUŞ**.
+  - *İsimli hedef kombolar* (doğru dizi → güçlendirilmiş bitirici + ekranda isim):
+    Sokak "Kaldırım Klasiği" J-J-K (duvar bounce biter) · "Aldatmaca" J-K-J;
+    Kickbox "Diz Fırtınası" J-J-K (havaya kaldırır) · "Palet Duvarı" K-K;
+    Güreş "Boğa Dalışı" J-J-L (suplex bitirici) · "Tokat Şamatası" J-J (bounce);
+    Sanat "Yıldırım Dansı" J-J-J-K (launcher) · "Ay Tekmesi" J-K;
+    Submission "Örümcek Ağı" J-J-L (kilit bitirici) · "Pençe Yağmuru" J-J-K.
+  - *Hasar ölçekleme:* kombodaki n. vuruş ×0.85^(n-1), taban 0.4 — sonsuz kombo yok.
+  - *Momentum uzatması:* bar %25 harcanarak zincire +1 vuruş (BLAZIN biriktirme
+    ile taktik takas).
+  - *Duvar bounce:* duvar yakınında kombo bitiricisi rakibi duvardan sektirir →
+    bir vuruşluk ek pencere.
+  - *Kombo sayacı UI:* "4 VURUŞ! 32 HASAR" + isimli kombo patlaması.
+- AI bu sistemleri kullanır: tamponlu zincirler, parry denemesi, juggle takibi.
+
+#### 6C — Sunum: Kamera + Efekt Cilası
+- **Dinamik kamera:** iki dövüşçüyü takip + mesafeye göre zoom (1.0–1.35),
+  yumuşak lerp; duvar/K.O. anlarında dramatik yakınlaşma. HUD sabit kalır.
+- **Hareket izleri (smear):** vuruşun aktif penceresinde uzvun son konumlarından
+  yarı saydam iz poligonu; BLAZIN'de altın afterimage.
+- **Darbe kareleri:** isabette 2 kare beyaz flaş + radyal çizgiler (anime impact).
+- **Ter/toz partikülleri + kalıcı izler:** büyük düşüşlerde zeminde toz bulutu,
+  ter damlaları; duvar çarpmalarında kalıcı çatlak/leke decal'ları (round boyu).
+- **Rim light:** karakter konturuna arena tonunda ışık vurgusu.
+- **Kabul:** yan yana eski/yeni video karşılaştırmasında fark "bariz" olmalı.
+
+### Sprint 7 — Kariyer Modu (ertelendi) ✅ *Tam oyun döngüsü*
 - Kariyer haritası (5 rakip merdiveni), maç sonu para/RESPECT ekranı.
 - Dükkan: stat, hamle, ikinci stil satın alma.
 - `localStorage` kayıt/yükleme, isim girme, yeni oyun.

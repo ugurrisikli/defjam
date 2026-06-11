@@ -9,7 +9,7 @@ Game.events = [];
 function MOVE(o) {
   return {
     hitstop: 0.06, shake: 4, lunge: 55,
-    knockdown: false, stagger: false, hitstun: 0.28, anim: null,
+    knockdown: false, stagger: false, hitstun: 0.28, anim: null, region: 'mid',
     ...o,
   };
 }
@@ -20,8 +20,8 @@ Game.STYLES = {
     label: 'SOKAK', desc: 'Dengeli kombocu',
     hp: 100, speed: 1.0, strike: 1.0, grapple: 1.0, momentum: 1.0, chain: 3,
     moves: {
-      light: MOVE({ name: 'Direkt', startup: 0.067, active: 0.05, recovery: 0.15, damage: 6, reach: 80, knockback: 130 }),
-      heavy: MOVE({ name: 'Çevirme Yumruk', startup: 0.117, active: 0.067, recovery: 0.25, damage: 10, reach: 96, knockback: 200, knockdown: true, hitstop: 0.09, shake: 8, lunge: 70, hitstun: 0.38 }),
+      light: MOVE({ name: 'Direkt', region: 'high', startup: 0.067, active: 0.05, recovery: 0.15, damage: 6, reach: 80, knockback: 130 }),
+      heavy: MOVE({ name: 'Çevirme Yumruk', region: 'high', startup: 0.117, active: 0.067, recovery: 0.25, damage: 10, reach: 96, knockback: 200, knockdown: true, hitstop: 0.09, shake: 8, lunge: 70, hitstun: 0.38 }),
       special: { name: 'Kafa Atma', damage: 9, effect: 'staggered' },
     },
   },
@@ -29,8 +29,8 @@ Game.STYLES = {
     label: 'KICKBOX', desc: 'Yikici baski',
     hp: 95, speed: 1.05, strike: 1.3, grapple: 0.75, momentum: 1.0, chain: 3,
     moves: {
-      light: MOVE({ name: 'Hizli Diz', startup: 0.075, active: 0.05, recovery: 0.16, damage: 7, reach: 84, knockback: 140 }),
-      heavy: MOVE({ name: 'Palet Tekme', startup: 0.142, active: 0.067, recovery: 0.30, damage: 13, reach: 112, knockback: 220, knockdown: true, hitstop: 0.10, shake: 9, lunge: 80, hitstun: 0.40 }),
+      light: MOVE({ name: 'Hizli Diz', region: 'mid', startup: 0.075, active: 0.05, recovery: 0.16, damage: 7, reach: 84, knockback: 140 }),
+      heavy: MOVE({ name: 'Palet Tekme', region: 'high', startup: 0.142, active: 0.067, recovery: 0.30, damage: 13, reach: 112, knockback: 220, knockdown: true, hitstop: 0.10, shake: 9, lunge: 80, hitstun: 0.40 }),
       special: { name: 'Diz Sovu', damage: 12, effect: 'hit' },
     },
   },
@@ -38,8 +38,8 @@ Game.STYLES = {
     label: 'GÜRES', desc: 'Ezici tutus gücü',
     hp: 115, speed: 0.85, strike: 0.8, grapple: 1.45, momentum: 0.9, chain: 2,
     moves: {
-      light: MOVE({ name: 'Agir Tokat', startup: 0.084, active: 0.05, recovery: 0.18, damage: 7, reach: 76, knockback: 180 }),
-      heavy: MOVE({ name: 'Omuz Sarji', startup: 0.15, active: 0.084, recovery: 0.32, damage: 12, reach: 88, knockback: 280, knockdown: true, hitstop: 0.11, shake: 10, lunge: 110, hitstun: 0.42, anim: 'charge' }),
+      light: MOVE({ name: 'Agir Tokat', region: 'high', startup: 0.084, active: 0.05, recovery: 0.18, damage: 7, reach: 76, knockback: 180 }),
+      heavy: MOVE({ name: 'Omuz Sarji', region: 'mid', startup: 0.15, active: 0.084, recovery: 0.32, damage: 12, reach: 88, knockback: 280, knockdown: true, hitstop: 0.11, shake: 10, lunge: 110, hitstun: 0.42, anim: 'charge' }),
       special: { name: 'Suplex', damage: 16, effect: 'suplex' },
     },
   },
@@ -47,8 +47,8 @@ Game.STYLES = {
     label: 'DÖVÜS SANATLARI', desc: 'Yildirim hizi, akan kombo',
     hp: 85, speed: 1.15, strike: 0.95, grapple: 0.9, momentum: 1.4, chain: 3,
     moves: {
-      light: MOVE({ name: 'Yildirim Vurus', startup: 0.05, active: 0.05, recovery: 0.12, damage: 5, reach: 78, knockback: 110 }),
-      heavy: MOVE({ name: 'Dönen Tekme', startup: 0.117, active: 0.067, recovery: 0.20, damage: 9, reach: 102, knockback: 190, knockdown: true, hitstop: 0.09, shake: 8, lunge: 75, hitstun: 0.38 }),
+      light: MOVE({ name: 'Yildirim Vurus', region: 'high', startup: 0.05, active: 0.05, recovery: 0.12, damage: 5, reach: 78, knockback: 110 }),
+      heavy: MOVE({ name: 'Dönen Tekme', region: 'high', startup: 0.117, active: 0.067, recovery: 0.20, damage: 9, reach: 102, knockback: 190, knockdown: true, hitstop: 0.09, shake: 8, lunge: 75, hitstun: 0.38 }),
       special: { name: 'Savurma', damage: 10, effect: 'down', momentum: 15 },
     },
   },
@@ -56,8 +56,8 @@ Game.STYLES = {
     label: 'SUBMISSION', desc: 'Kilitler ve can çalma',
     hp: 105, speed: 0.9, strike: 0.85, grapple: 1.25, momentum: 1.0, chain: 2, holdSteal: true,
     moves: {
-      light: MOVE({ name: 'Pençe', startup: 0.075, active: 0.05, recovery: 0.16, damage: 6, reach: 74, knockback: 120 }),
-      heavy: MOVE({ name: 'Alçak Tekme', startup: 0.125, active: 0.067, recovery: 0.24, damage: 9, reach: 92, knockback: 120, stagger: true, hitstop: 0.08, shake: 6, lunge: 60, anim: 'low' }),
+      light: MOVE({ name: 'Pençe', region: 'mid', startup: 0.075, active: 0.05, recovery: 0.16, damage: 6, reach: 74, knockback: 120 }),
+      heavy: MOVE({ name: 'Alçak Tekme', region: 'low', startup: 0.125, active: 0.067, recovery: 0.24, damage: 9, reach: 92, knockback: 120, stagger: true, hitstop: 0.08, shake: 6, lunge: 60, anim: 'low' }),
       special: { name: 'Eklem Kilidi', damage: 14, effect: 'staggered', steal: 4 },
     },
   },
@@ -213,6 +213,7 @@ Game.Fighter = class {
   takeHit(atk, dir) {
     this.hp = Math.max(0, this.hp - atk.damage);
     this.kvx = dir * atk.knockback;
+    this.hitRegion = atk.region || 'mid'; // bölgesel tepki animasyonu için
     this.attack = null;
     this.hitstun = atk.hitstun;
     if (this.hp <= 0) this.enterState('ko');

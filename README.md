@@ -75,5 +75,10 @@ node --test test/combat.test.js test/ai.test.js
       Otopark, Metro), 2 round alan kazanır + round ışıkları ve portreler, K.O.
       tekrarı (ağır çekim + letterbox), anonsör satırları (İLK KAN, KOMBO x3...),
       coşan kalabalık (hype'a göre sallanır, kollar havaya kalkar)
+- [x] **Sprint 6A — Keyframe animasyon motoru:** kanal tabanlı iskelet + klip sistemi
+      (anahtar poz + easing + outBack follow-through), saldırı klipleri frame-data'ya
+      senkron (gerilme→temas→toparlanma), 85 ms poz harmanlama (ani geçiş yok),
+      bölgesel hasar tepkileri (kafa/gövde/diz), stile özel yürüyüş gait'i ve blok,
+      tutuş boğuşması/suplex kavisi/kalkış koreografileri
 - [ ] Sprint 5 — Juice ve sunum
 - [ ] Sprint 6 — Kariyer modu *(tam oyun döngüsü)*
