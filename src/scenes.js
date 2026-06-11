@@ -19,24 +19,25 @@ Game.scenes.menu = {
     ctx.shadowColor = '#ff2d78';
     ctx.shadowBlur = 24;
     ctx.fillStyle = '#ff5e9c';
-    ctx.fillText('SOKAK KRALI', W / 2, 170);
+    ctx.fillText('SOKAK KRALI', W / 2, 160);
     ctx.restore();
 
     ctx.font = '20px monospace';
     ctx.fillStyle = '#8a8a9a';
-    ctx.fillText('Yeralti dövüs arenasina hosgeldin', W / 2, 215);
+    ctx.fillText('Yeralti dövüs arenasina hosgeldin', W / 2, 205);
 
     if (Math.floor(Game.time * 2) % 2 === 0) {
       ctx.font = 'bold 28px monospace';
       ctx.fillStyle = '#ffd27a';
-      ctx.fillText('BASLA — ENTER', W / 2, 310);
+      ctx.fillText('BASLA — ENTER', W / 2, 290);
     }
 
-    ctx.font = '16px monospace';
+    ctx.font = '15px monospace';
     ctx.fillStyle = '#55556a';
-    ctx.fillText('P1: A/D yürü · W zipla · J yumruk · K tekme · S blok', W / 2, 410);
-    ctx.fillText('P2: Oklar · , yumruk · . tekme · asagi ok blok', W / 2, 436);
-    ctx.fillText('Menüye dönüs: ESC', W / 2, 462);
+    ctx.fillText('P1: A/D yürü · W zipla · J yumruk · K tekme · L tut · S blok', W / 2, 390);
+    ctx.fillText('P2: Oklar · , yumruk · . tekme · / tut · asagi ok blok', W / 2, 416);
+    ctx.fillText('Tutunca: yumruk tusu = salla · tutma tusu = firlat (+yön)', W / 2, 442);
+    ctx.fillText('Blok vurusu keser ama TUTMAYI KESEMEZ! · ESC menü', W / 2, 468);
   },
 };
 
@@ -50,7 +51,9 @@ Game.scenes.match = {
     this.hitstop = 0;
     this.shake = 0;
     this.sparks = [];
+    this.texts = [];
     this.winner = null;
+    Game.events.length = 0;
   },
 
   update(dt) {
@@ -60,7 +63,7 @@ Game.scenes.match = {
       return;
     }
     this.phaseTime += dt;
-    this.updateSparks(dt);
+    this.updateFx(dt);
     this.shake *= Math.max(0, 1 - 10 * dt);
 
     // hit-stop: vurus ani donar, sadece efektler akar
@@ -81,17 +84,20 @@ Game.scenes.match = {
       if (I.wasPressed('Enter')) { this.enter(); return; }
       this.p1.update(dt, idle);
       this.p2.update(dt, idle);
+      this.drainEvents();
       return;
     }
 
     // --- fight ---
     const in1 = {
       left: I.isDown('KeyA'), right: I.isDown('KeyD'), jump: I.isDown('KeyW'),
-      punch: I.wasPressed('KeyJ'), kick: I.wasPressed('KeyK'), block: I.isDown('KeyS'),
+      punch: I.wasPressed('KeyJ'), kick: I.wasPressed('KeyK'),
+      grapple: I.wasPressed('KeyL'), block: I.isDown('KeyS'),
     };
     const in2 = {
       left: I.isDown('ArrowLeft'), right: I.isDown('ArrowRight'), jump: I.isDown('ArrowUp'),
-      punch: I.wasPressed('Comma'), kick: I.wasPressed('Period'), block: I.isDown('ArrowDown'),
+      punch: I.wasPressed('Comma'), kick: I.wasPressed('Period'),
+      grapple: I.wasPressed('Slash'), block: I.isDown('ArrowDown'),
     };
     this.p1.update(dt, in1);
     this.p2.update(dt, in2);
@@ -103,6 +109,11 @@ Game.scenes.match = {
     Game.Combat.separate(this.p1, this.p2);
     this.applyEvent(Game.Combat.resolve(this.p1, this.p2));
     this.applyEvent(Game.Combat.resolve(this.p2, this.p1));
+    this.applyEvent(Game.Combat.resolveGrab(this.p1, this.p2));
+    this.applyEvent(Game.Combat.resolveGrab(this.p2, this.p1));
+    if (this.p1.state === 'hold') this.applyEvent(Game.Combat.updateHold(this.p1, this.p2, in1));
+    if (this.p2.state === 'hold') this.applyEvent(Game.Combat.updateHold(this.p2, this.p1, in2));
+    this.drainEvents();
 
     if (this.p1.hp <= 0 || this.p2.hp <= 0) {
       this.phase = 'over';
@@ -111,16 +122,62 @@ Game.scenes.match = {
     }
   },
 
+  // dövüsçü güncellemelerinin ürettigi çevre olaylari
+  drainEvents() {
+    for (const ev of Game.events) this.applyEvent(ev);
+    Game.events.length = 0;
+  },
+
   applyEvent(ev) {
     if (!ev) return;
-    if (ev.type === 'hit') {
-      this.hitstop = ev.attack.hitstop;
-      this.shake = ev.attack.shake;
-      this.spawnSparks(ev.x, ev.y, 9, '#ffb347');
-    } else if (ev.type === 'block') {
-      this.hitstop = 0.03;
-      this.spawnSparks(ev.x, ev.y, 5, '#cfd8ff');
+    switch (ev.type) {
+      case 'hit':
+        this.hitstop = ev.attack.hitstop;
+        this.shake = ev.attack.shake;
+        this.spawnSparks(ev.x, ev.y, 9, '#ffb347');
+        break;
+      case 'block':
+        this.hitstop = 0.03;
+        this.spawnSparks(ev.x, ev.y, 5, '#cfd8ff');
+        break;
+      case 'grab':
+        this.spawnSparks(ev.x, ev.y, 4, '#ffd27a');
+        break;
+      case 'holdhit':
+        this.hitstop = 0.05;
+        this.shake = 4;
+        this.spawnSparks(ev.x, ev.y, 7, '#ffb347');
+        break;
+      case 'throw':
+        this.addText('FIRLATMA!', ev.x, ev.y - 40, '#ffd27a');
+        break;
+      case 'wallslam':
+        this.hitstop = 0.12;
+        this.shake = Game.THROW.wallShake;
+        this.spawnSparks(ev.x, ev.y, 16, '#ff6b6b');
+        this.addText('DUVAR!', ev.x, ev.y - 40, '#ff6b6b');
+        break;
+      case 'land':
+        this.shake = 6;
+        this.spawnSparks(ev.x, ev.y, 8, '#b0a8c0');
+        break;
+      case 'crowdcatch':
+        this.addText('KALABALIK TUTTU!', ev.x, ev.y - 40, '#aef3ff');
+        break;
+      case 'crowdshove':
+        this.shake = 5;
+        this.spawnSparks(ev.x, ev.y, 6, '#aef3ff');
+        this.addText('GERI ITTILER!', ev.x, ev.y - 40, '#aef3ff');
+        break;
+      case 'escape':
+        this.addText('KURTULDU!', ev.x, ev.y - 40, '#cfd8ff');
+        break;
     }
+  },
+
+  addText(str, x, y, color) {
+    const W = 960;
+    this.texts.push({ str, x: Math.max(90, Math.min(W - 90, x)), y, color, life: 0.9 });
   },
 
   spawnSparks(x, y, count, color) {
@@ -131,7 +188,7 @@ Game.scenes.match = {
     }
   },
 
-  updateSparks(dt) {
+  updateFx(dt) {
     for (const p of this.sparks) {
       p.x += p.vx * dt;
       p.y += p.vy * dt;
@@ -139,6 +196,11 @@ Game.scenes.match = {
       p.life -= dt;
     }
     this.sparks = this.sparks.filter((p) => p.life > 0);
+    for (const t of this.texts) {
+      t.y -= 36 * dt;
+      t.life -= dt;
+    }
+    this.texts = this.texts.filter((t) => t.life > 0);
   },
 
   render(ctx, canvas) {
@@ -153,6 +215,14 @@ Game.scenes.match = {
       ctx.globalAlpha = Math.max(0, p.life / 0.4);
       ctx.fillStyle = p.color;
       ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+    }
+    ctx.globalAlpha = 1;
+    for (const t of this.texts) {
+      ctx.globalAlpha = Math.min(1, t.life / 0.4);
+      ctx.font = 'bold 22px Impact, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = t.color;
+      ctx.fillText(t.str, t.x, t.y);
     }
     ctx.globalAlpha = 1;
     ctx.restore();

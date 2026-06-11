@@ -15,7 +15,13 @@ Kurulum gerekmez: `index.html` dosyasını tarayıcıda aç, hepsi bu.
 | Zıpla | W | ↑ |
 | Yumruk | J | , |
 | Tekme | K | . |
+| Tutma | L | / |
 | Blok | S (basılı tut) | ↓ (basılı tut) |
+
+Tutma bloğu deler. Tutunca: **yumruk tuşu** = salla (en fazla 3),
+**tutma tuşu** = fırlat (yön tuşuyla geriye de atılabilir). Duvara/hoparlöre
+çarpan rakip büyük hasar alır; kalabalığa sert savrulan rakibi kalabalık
+tutup sersemlemiş hâlde geri iter.
 | Başlat / Tekrar maç / Menü | Enter / ESC | |
 
 ## Testler
@@ -31,7 +37,9 @@ node --test test/combat.test.js
 - [x] **Sprint 1 — Çekirdek dövüş:** yumruk/tekme (hazırlık-isabet-toparlanma kareleri),
       blok, can barları, savrulma, yere düşme/kalkma, K.O., hit-stop + ekran sarsıntısı,
       kıvılcım efektleri, maç akışı (HAZIR → DÖVÜŞ → K.O. → tekrar)
-- [ ] Sprint 2 — Grapple ve çevre etkileşimi *(ilk oynanabilir sürüm)*
+- [x] **Sprint 2 — Grapple ve çevre etkileşimi:** tutma/sallama/fırlatma, bloğu delen
+      tutuş, duvara fırlatma hasarı, kalabalığın tutup geri itmesi, tutuştan kurtulma,
+      yüzen olay yazıları ("DUVAR!", "KALABALIK TUTTU!") *(ilk oynanabilir sürüm)* ✅
 - [ ] Sprint 3 — Stiller, momentum, BLAZIN
 - [ ] Sprint 4 — AI rakip
 - [ ] Sprint 5 — Juice ve sunum

@@ -79,6 +79,26 @@ Game.Arena = (function () {
       ctx.ellipse(c.x, baseY + c.size * 0.9, c.size, c.size * 0.6, 0, Math.PI, 0);
       ctx.fill();
     }
+    // kenar hoparlör kuleleri: firlatma hedefi olan sert yüzeyler
+    for (const sx of [10, 950 - 64]) {
+      ctx.fillStyle = '#1c1822';
+      ctx.fillRect(sx, 300, 64, groundY - 300);
+      ctx.strokeStyle = '#2e2838';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(sx + 4, 306, 56, 70);
+      ctx.strokeRect(sx + 4, 384, 56, 80);
+      for (const [cy, r] of [[341, 20], [424, 24]]) {
+        ctx.fillStyle = '#0c0a10';
+        ctx.beginPath();
+        ctx.arc(sx + 32, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#3a3346';
+        ctx.beginPath();
+        ctx.arc(sx + 32, cy, r * (0.55 + Math.sin(t * 7) * 0.04), 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
     // kalabalik önü karartma seridi (derinlik hissi)
     const fade = ctx.createLinearGradient(0, 330, 0, groundY);
     fade.addColorStop(0, 'rgba(10,10,16,0)');

@@ -21,12 +21,16 @@ Game.drawFighter = function (ctx, f, t) {
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
-  // yere serilme (0 ayakta, 1 sirtüstü) ve sarsilma egimi
+  // yere serilme (0 ayakta, 1 sirtüstü) ve duruma göre gövde egimi
   let lie = 0;
   if (f.state === 'down' || f.state === 'ko') lie = Math.min(1, f.stateTime / 0.18);
   else if (f.state === 'getup') lie = 1 - Math.min(1, f.stateTime / 0.35);
   ctx.rotate(-lie * Math.PI / 2);
   if (f.state === 'hit') ctx.rotate(-0.16);
+  else if (f.state === 'thrown') ctx.rotate(-f.stateTime * 8); // havada takla
+  else if (f.state === 'staggered') ctx.rotate(Math.sin(f.stateTime * 18) * 0.14); // sersem sallanma
+  else if (f.state === 'crowdhold') ctx.rotate(-0.28); // kalabalik geriye çekiyor
+  else if (f.state === 'held') ctx.rotate(-0.1);
 
   const breathe = f.state === 'idle' ? Math.sin(t * 2.6) * 2 : 0;
   const swing = f.state === 'walk' ? Math.sin(f.walkPhase) : 0;
@@ -80,6 +84,17 @@ Game.drawFighter = function (ctx, f, t) {
   if (f.state === 'punch') {
     backArm = { elbow: { x: 18, y: shoulderY + 16 }, fist: { x: 26, y: shoulderY + 6 } };
     frontArm = { elbow: { x: 20, y: shoulderY + 8 }, fist: { x: 30 + 40 * ext, y: shoulderY + 8 } };
+  } else if (f.state === 'grab') {
+    const gext = Game.grabExt(f);
+    backArm = { elbow: { x: 18, y: shoulderY + 18 }, fist: { x: 26 + 26 * gext, y: shoulderY + 18 } };
+    frontArm = { elbow: { x: 20, y: shoulderY + 10 }, fist: { x: 28 + 30 * gext, y: shoulderY + 8 } };
+  } else if (f.state === 'hold') {
+    backArm = { elbow: { x: 22, y: shoulderY + 16 }, fist: { x: 38, y: shoulderY + 14 } };
+    frontArm = { elbow: { x: 24, y: shoulderY + 8 }, fist: { x: 40, y: shoulderY + 4 } };
+  } else if (f.state === 'held' || f.state === 'crowdhold' || f.state === 'staggered' || f.state === 'thrown') {
+    // kollar gevsek savrulur
+    backArm = { elbow: { x: 0, y: shoulderY + 22 }, fist: { x: -10, y: shoulderY + 8 } };
+    frontArm = { elbow: { x: 12, y: shoulderY + 26 }, fist: { x: 18, y: shoulderY + 38 } };
   } else if (f.state === 'block') {
     backArm = { elbow: { x: 14, y: shoulderY + 22 }, fist: { x: 20, y: shoulderY + 2 } };
     frontArm = { elbow: { x: 18, y: shoulderY + 26 }, fist: { x: 24, y: shoulderY + 12 } };
@@ -116,6 +131,16 @@ Game.drawFighter = function (ctx, f, t) {
   ctx.fillRect(-3, headY - 7, 24, 5);
 
   ctx.restore();
+};
+
+// Tutma denemesinin uzanma orani.
+Game.grabExt = function (f) {
+  const g = Game.GRAB;
+  const t = f.stateTime;
+  if (t < g.startup) return t / g.startup;
+  const activeEnd = g.startup + g.active;
+  if (t < activeEnd) return 1;
+  return Math.max(0, 1 - (t - activeEnd) / g.recovery);
 };
 
 // Saldiri animasyonunun uzanma orani: hazirlikta gerilir,
