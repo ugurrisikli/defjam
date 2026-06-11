@@ -40,7 +40,7 @@ function frames(n, p1, p2, i1 = NO, i2 = NO) {
 test('menzildeki yumruk bir kez hasar verir', () => {
   const [p1, p2] = makePair(50);
   const events = frames(30, p1, p2, { punch: true });
-  assert.strictEqual(p2.hp, 100 - Game.ATTACKS.punch.damage);
+  assert.strictEqual(p2.hp, 100 - Game.STYLES.sokak.moves.light.damage);
   assert.strictEqual(events.filter((e) => e.type === 'hit').length, 1);
 });
 
@@ -59,10 +59,10 @@ test('blok hasari engeller ve savunani geri iter', () => {
   assert.ok(p2.x > startX, 'blok geri kaydirmali');
 });
 
-test('tekme yere düsürür, düsen toparlanip ayaga kalkar', () => {
+test('güçlü vurus yere düsürür, düsen toparlanip ayaga kalkar', () => {
   const [p1, p2] = makePair(60);
   frames(30, p1, p2, { kick: true });
-  assert.strictEqual(p2.hp, 100 - Game.ATTACKS.kick.damage);
+  assert.strictEqual(p2.hp, 100 - Game.STYLES.sokak.moves.heavy.damage);
   assert.strictEqual(p2.state, 'down');
   frames(120, p1, p2); // 2 sn: down (0.9) + getup (0.35) biter
   assert.strictEqual(p2.state, 'idle');
@@ -224,7 +224,7 @@ test('kickbox vuruslari daha sert, güres tutusu daha agir', () => {
   const kb1 = new Game.Fighter({ name: 'K', x: 400, facing: 1, color: '#fff', accent: '#fff', style: 'kickbox' });
   const kb2 = new Game.Fighter({ name: 'D', x: 450, facing: -1, color: '#fff', accent: '#fff' });
   frames(30, kb1, kb2, { punch: true });
-  assert.strictEqual(kb2.hp, 100 - Math.round(6 * 1.3));
+  assert.strictEqual(kb2.hp, 100 - Math.round(Game.STYLES.kickbox.moves.light.damage * 1.3));
 
   const g1 = new Game.Fighter({ name: 'G', x: 400, facing: 1, color: '#fff', accent: '#fff', style: 'gures' });
   const g2 = new Game.Fighter({ name: 'D', x: 450, facing: -1, color: '#fff', accent: '#fff' });
@@ -233,12 +233,11 @@ test('kickbox vuruslari daha sert, güres tutusu daha agir', () => {
   assert.strictEqual(g2.hp, 100 - Math.round(5 * 1.45));
 });
 
-test('isabet momentum kazandirir, hasar yemek momentum kaybettirir', () => {
+test('isabet iki tarafa da momentum kazandirir (comeback)', () => {
   const [p1, p2] = makePair(50);
-  p2.momentum = 50;
   frames(30, p1, p2, { punch: true });
-  assert.strictEqual(p1.momentum, 8);
-  assert.strictEqual(p2.momentum, 44);
+  assert.strictEqual(p1.momentum, Game.MOMENTUM.hitGive);
+  assert.strictEqual(p2.momentum, Game.MOMENTUM.hitTake);
 });
 
 test('bar dolunca BLAZIN aktive edilir, tutus özel harekete dönüsür', () => {
@@ -257,7 +256,71 @@ test('BLAZIN modunda vuruslar güçlenir', () => {
   const [p1, p2] = makePair(50);
   p1.blazinTime = 5;
   frames(30, p1, p2, { punch: true });
-  assert.strictEqual(p2.hp, 100 - Math.round(6 * Game.BLAZIN.strikeMult));
+  assert.strictEqual(p2.hp, 100 - Math.round(Game.STYLES.sokak.moves.light.damage * Game.BLAZIN.strikeMult));
+});
+
+// ---- Sprint 4.5: stil hamleleri ve kombo zinciri ----
+
+test('isabet eden vurus toparlanmada zincire baglanir (3lü kombo)', () => {
+  const [p1, p2] = makePair(50);
+  const events = frames(60, p1, p2, { punch: true });
+  // sokak 3 zincir: punch girisi her karede "basili" gibi degil tek kare;
+  // zincir için tekrar basis gerekir -> elle besle
+  let hits = events.filter((e) => e.type === 'hit').length;
+  assert.strictEqual(hits, 1, 'tek basista tek vurus');
+
+  const [a, b] = makePair(50);
+  let total = [];
+  // bas, kisa araliklarla tekrar bas: zincir penceresine denk gelir
+  for (let i = 0; i < 5; i++) {
+    total = total.concat(frames(1, a, b, { punch: true }));
+    total = total.concat(frames(7, a, b));
+  }
+  total = total.concat(frames(40, a, b));
+  hits = total.filter((e) => e.type === 'hit').length;
+  assert.strictEqual(hits, 3, 'sokak stili en fazla 3lü zincir vurmali');
+});
+
+test('iskalayan/bloklanan vurus zincire baglanamaz', () => {
+  const [a, b] = makePair(50);
+  let events = [];
+  for (let i = 0; i < 4; i++) {
+    events = events.concat(frames(1, a, b, { punch: true }, { block: true }));
+    events = events.concat(frames(7, a, b, {}, { block: true }));
+  }
+  events = events.concat(frames(30, a, b, {}, { block: true }));
+  assert.strictEqual(events.filter((e) => e.type === 'hit').length, 0);
+  assert.strictEqual(b.hp, 100);
+});
+
+test('güres özel hamlesi Suplex: hasar + pozisyon degisimi', () => {
+  const g1 = new Game.Fighter({ name: 'G', x: 400, facing: 1, color: '#fff', accent: '#fff', style: 'gures' });
+  const g2 = new Game.Fighter({ name: 'D', x: 450, facing: -1, color: '#fff', accent: '#fff' });
+  frames(15, g1, g2, { grapple: true });
+  assert.strictEqual(g1.state, 'hold');
+  const events = frames(5, g1, g2, { kick: true });
+  assert.ok(events.some((e) => e.type === 'special' && e.name === 'Suplex'));
+  assert.strictEqual(g2.hp, 100 - Game.STYLES.gures.moves.special.damage);
+  assert.strictEqual(g2.state, 'down');
+  assert.ok(g2.x < g1.x, 'rakip arkaya asirilmali (pozisyon degisimi)');
+});
+
+test('submission özel hamlesi Eklem Kilidi can çalar', () => {
+  const s1 = new Game.Fighter({ name: 'S', x: 400, facing: 1, color: '#fff', accent: '#fff', style: 'submission' });
+  const s2 = new Game.Fighter({ name: 'D', x: 450, facing: -1, color: '#fff', accent: '#fff' });
+  s1.hp = 60;
+  frames(15, s1, s2, { grapple: true });
+  frames(5, s1, s2, { kick: true });
+  assert.strictEqual(s2.hp, 100 - Game.STYLES.submission.moves.special.damage);
+  assert.strictEqual(s1.hp, 64, 'eklem kilidi 4 can çalmali');
+  assert.strictEqual(s2.state, 'staggered');
+});
+
+test('submission alçak tekmesi yere düsürmez, sersemletir (tutusa giris)', () => {
+  const s1 = new Game.Fighter({ name: 'S', x: 400, facing: 1, color: '#fff', accent: '#fff', style: 'submission' });
+  const s2 = new Game.Fighter({ name: 'D', x: 460, facing: -1, color: '#fff', accent: '#fff' });
+  frames(30, s1, s2, { kick: true });
+  assert.strictEqual(s2.state, 'staggered');
 });
 
 test('submission tutusta can çalar', () => {

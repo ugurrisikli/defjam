@@ -15,19 +15,21 @@ Game.Combat = {
     att.attackHasHit = true;
     const dir = att.facing;
     const fxY = Game.ARENA.groundY - def.y - 95;
+    const MO = Game.MOMENTUM;
 
     if (def.isBlocking()) {
+      att.lastHitBlocked = true;
       // kosu vurusu blok edilirse daha sert iter; saldirgan momentum kaybeder
       def.x += dir * (a.lunge > 200 ? 26 : 14);
-      def.addMomentum(5);
-      att.addMomentum(-4);
+      def.addMomentum(MO.blockGain);
+      att.addMomentum(MO.blockedPenalty);
       return { type: 'block', x: def.x - dir * 20, y: fxY };
     }
 
     const dmg = Math.round(a.damage * att.strikeMult * (att.blazinTime > 0 ? Game.BLAZIN.strikeMult : 1));
     def.takeHit({ ...a, damage: dmg }, dir);
-    att.addMomentum(8);
-    def.addMomentum(-6);
+    att.addMomentum(MO.hitGive);
+    def.addMomentum(MO.hitTake); // hasar yiyen de bar doldurur (comeback)
     return { type: 'hit', attack: a, x: def.x - dir * 15, y: fxY };
   },
 
@@ -65,19 +67,48 @@ Game.Combat = {
     return { type: 'grab', x: def.x, y: fxY };
   },
 
-  // Tutus sürerken: sallama (yumruk tusu), firlatma (tutma tusu), zaman asimi.
+  // Tutus sürerken: salla (yumruk), stil özel hamlesi (tekme),
+  // firlat (tutma) veya zaman asimi.
   updateHold(att, def, input) {
     const A = Game.ARENA;
+    const MO = Game.MOMENTUM;
     // rakip önde sabit tutulur
     def.x = Math.max(A.left, Math.min(A.right, att.x + att.facing * 44));
     def.y = 0;
+
+    // STIL ÖZEL HAMLESI: her stilin imza tutus bitiricisi
+    if (input.kick) {
+      const sp = att.moves.special;
+      def.hp = Math.max(0, def.hp - sp.damage);
+      if (sp.steal) att.hp = Math.min(att.maxHp, att.hp + sp.steal);
+      att.addMomentum(MO.specialGain + (sp.momentum || 0));
+      if (def.hp <= 0) {
+        def.kvx = att.facing * 160;
+        def.enterState('ko');
+      } else if (sp.effect === 'suplex') {
+        // rakip arkaya asirilir: pozisyonlar degisir
+        def.x = att.x - att.facing * 50;
+        def.kvx = -att.facing * 60;
+        def.enterState('down');
+      } else if (sp.effect === 'down') {
+        def.kvx = att.facing * 180;
+        def.enterState('down');
+      } else if (sp.effect === 'staggered') {
+        def.kvx = att.facing * 90;
+        def.enterState('staggered');
+      } else {
+        def.takeHit({ ...att.moves.light, damage: 0, knockback: 200 }, att.facing);
+      }
+      att.enterState('idle');
+      return { type: 'special', name: sp.name, x: def.x, y: A.groundY - 95 };
+    }
 
     if (input.punch && att.holdStrikes < 3) {
       att.holdStrikes++;
       const dmg = Math.round(5 * att.grappleMult);
       def.hp = Math.max(0, def.hp - dmg);
       if (att.styleData.holdSteal) att.hp = Math.min(att.maxHp, att.hp + 2); // can çalma
-      att.addMomentum(4);
+      att.addMomentum(MO.holdHit);
       if (def.hp <= 0) {
         def.kvx = att.facing * 140;
         def.enterState('ko');
@@ -100,7 +131,7 @@ Game.Combat = {
       def.y = Math.max(def.y, 1);
       def.enterState('thrown');
       att.enterState('idle');
-      att.addMomentum(10);
+      att.addMomentum(Game.MOMENTUM.throwGain);
       return { type: 'throw', x: def.x, y: A.groundY - 95 };
     }
 

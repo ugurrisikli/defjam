@@ -25,12 +25,18 @@ Menüden **TEK OYUNCU** (stil kişilikli AI rakibe karşı) veya **IKI OYUNCU**
 Koşarken yumruk = **dalış yumruğu**, tekme = **uçan tekme**: yüksek hasar +
 yere düşürür ama ıskalarsan uzun toparlanma cezası var.
 
+**Stil hamleleri:** Her stilin kendi hızlı/güçlü vuruşu ve tutuş özel hamlesi
+(tutuş sırasında tekme tuşu) var — Güreş'in Suplex'i pozisyon değiştirir,
+Submission'ın Eklem Kilidi can çalar. **Kombo:** isabet eden vuruş, toparlanma
+penceresinde tekrar basışla zincire bağlanır (hızlı stiller 3'lü, ağırlar 2'li).
+
 Tutma bloğu deler. Tutunca: **yumruk tuşu** = salla (en fazla 3),
 **tutma tuşu** = fırlat (yön tuşuyla geriye de atılabilir). Duvara/hoparlöre
 çarpan rakip büyük hasar alır; kalabalığa sert savrulan rakibi kalabalık
 tutup sersemlemiş hâlde geri iter.
 
-**Momentum & BLAZIN:** isabet aldıkça momentum barın dolar (hasar yedikçe boşalır).
+**Momentum & BLAZIN:** vurdukça barın hızlı, hasar yedikçe yavaş dolar
+(comeback şansı — kaybeden de BLAZIN görür).
 Bar dolunca BLAZIN tuşuyla modu aç: 5 saniye güçlenirsin; bu sırada **tutma**
 yaparsan sinematik BLAZIN hareketi patlar (ağır çekim + büyük hasar).
 
@@ -61,5 +67,8 @@ node --test test/combat.test.js test/ai.test.js
 - [x] **Sprint 4 — AI rakip:** stil bazlı kişilikler (Güreş tutma arar, Kickbox baskı kurar,
       Dövüş Sanatları blok/sabır oynar...), insansı reaksiyon gecikmesi ve hata payı,
       BLAZIN kullanımı, tutuşta duvara fırlatma zekâsı, tek oyunculu mod
+- [x] **Sprint 4.5 — Stil hamleleri ve denge:** stile özel hızlı/güçlü vuruşlar ve tutuş
+      özel hamleleri (Suplex, Eklem Kilidi...), kombo zinciri (2'li/3'lü), momentum
+      comeback ekonomisi, AI kombo/özel hamle kullanımı
 - [ ] Sprint 5 — Juice ve sunum
 - [ ] Sprint 6 — Kariyer modu *(tam oyun döngüsü)*

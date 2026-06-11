@@ -53,9 +53,11 @@ Game.drawFighter = function (ctx, f, t) {
   const swing = f.state === 'walk' || running ? Math.sin(f.walkPhase) : 0;
   const inAir = f.state === 'jump';
   const ext = Game.attackExt(f); // saldiri uzanma orani 0..1
+  const anim = (f.attack && f.attack.anim) || null;
   if (running) ctx.rotate(0.14); // kosuda öne egilme
   else if (f.state === 'runpunch') ctx.rotate(0.2 * ext);
   else if (f.state === 'runkick') ctx.rotate(-0.3 * ext); // uçan tekmede geriye yatis
+  else if (anim === 'charge') ctx.rotate(0.3 * ext); // omuz sarjinda gövde dalar
 
   const hipY = -52 + breathe * 0.4;
   const shoulderY = -96 + breathe;
@@ -65,7 +67,19 @@ Game.drawFighter = function (ctx, f, t) {
   ctx.strokeStyle = f.color;
   ctx.lineWidth = 13;
   let legs;
-  if (f.state === 'kick') {
+  if (f.state === 'kick' && anim === 'low') {
+    // alçak tekme: ön bacak yere paralel süpürür
+    legs = [
+      { knee: { x: 16 + 16 * ext, y: hipY * 0.6 }, foot: { x: 18 + 60 * ext, y: -8 - 6 * ext } },
+      { knee: { x: -4, y: hipY * 0.5 }, foot: { x: -10, y: 0 } },
+    ];
+  } else if (f.state === 'kick' && anim === 'charge') {
+    // omuz sarji: bacaklar dalisi tasir
+    legs = [
+      { knee: { x: 20, y: hipY * 0.55 }, foot: { x: 30, y: 0 } },
+      { knee: { x: -8, y: hipY * 0.5 }, foot: { x: -22, y: 0 } },
+    ];
+  } else if (f.state === 'kick') {
     // ön bacak uzanan tekme, arka bacak destek
     legs = [
       { knee: { x: 18 + 20 * ext, y: hipY * 0.55 - 10 * ext }, foot: { x: 16 + 58 * ext, y: -16 - 36 * ext } },
@@ -113,7 +127,11 @@ Game.drawFighter = function (ctx, f, t) {
   ctx.lineWidth = 11;
   const armBob = swing * 4;
   let backArm, frontArm;
-  if (f.state === 'punch') {
+  if (f.state === 'kick' && anim === 'charge') {
+    // omuz sarji: kollar gövdeye yapisik dalar
+    backArm = { elbow: { x: 16, y: shoulderY + 14 }, fist: { x: 26 + 10 * ext, y: shoulderY + 18 } };
+    frontArm = { elbow: { x: 18, y: shoulderY + 10 }, fist: { x: 30 + 14 * ext, y: shoulderY + 12 } };
+  } else if (f.state === 'punch') {
     backArm = { elbow: { x: 18, y: shoulderY + 16 }, fist: { x: 26, y: shoulderY + 6 } };
     frontArm = { elbow: { x: 20, y: shoulderY + 8 }, fist: { x: 30 + 40 * ext, y: shoulderY + 8 } };
   } else if (f.state === 'runpunch') {

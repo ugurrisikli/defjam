@@ -149,15 +149,28 @@ Game.AI = class {
     if (mistake) choice = ['punch', 'kick', 'grab', 'back'][Math.floor(this.rng() * 4)];
 
     switch (choice) {
-      case 'punch': this.push({ punch: true }, 0.05); break;
-      case 'kick': this.push({ kick: true }, 0.05); break;
+      case 'punch': this.pushCombo('punch'); break;
+      case 'kick': this.pushCombo('kick'); break;
       case 'grab': this.push({ grapple: true }, 0.05); break;
       case 'back': this.push({ [bck]: true }, 0.22 + this.rng() * 0.15); break;
       case 'guard': this.push({ block: true }, 0.3 + this.rng() * 0.2); break;
     }
   }
 
-  // tutus sürerken: salla ya da en yakin duvara firlat
+  // vurus + stilin zincir hakki kadar takip vurusu dener
+  // (ilk vurus iskalir/bloklanirsa takipler kendiliginden bosa gider)
+  pushCombo(key) {
+    this.push({ [key]: true }, 0.05);
+    const followups = this.f.styleData.chain - 1;
+    for (let i = 0; i < followups; i++) {
+      if (this.rng() < 0.7) {
+        this.push({}, 0.1);
+        this.push({ [key]: true }, 0.05);
+      }
+    }
+  }
+
+  // tutus sürerken: salla, stil özel hamlesi yap ya da en yakin duvara firlat
   holdBrain(dt) {
     this.holdTimer -= dt;
     if (this.holdTimer > 0) return {};
@@ -165,6 +178,7 @@ Game.AI = class {
     if (this.f.holdStrikes < 2 && this.rng() < this.profile.holdStrike) {
       return { punch: true };
     }
+    if (this.rng() < 0.45) return { kick: true }; // stilin imza tutus hamlesi
     const A = Game.ARENA;
     const wallDir = this.f.x > (A.left + A.right) / 2 ? 1 : -1; // yakin duvar
     return { grapple: true, right: wallDir === 1, left: wallDir === -1 };

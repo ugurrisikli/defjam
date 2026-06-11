@@ -74,19 +74,26 @@ test/               # mantık testleri
   **yumruk = dalış yumruğu**, **tekme = uçan tekme**: yüksek hasar + yere düşürür ama
   ıskalarsa/bloklanırsa uzun toparlanma cezası vardır (yüksek risk, yüksek ödül).
 
-### 3.2 Beş dövüş stili
-| Stil | Güçlü yön | Zayıf yön |
-|---|---|---|
-| Sokak Dövüşü | Dengeli, hızlı kombolar | Belirgin zirvesi yok |
-| Kickbox | En yüksek vuruş hasarı, menzil | Tutmaya karşı kırılgan |
-| Güreş | Tutma/fırlatma hasarı, duvar bonusu | Yavaş, vuruşları zayıf |
-| Dövüş Sanatları | Kaçınma ve karşı saldırı ustası | Düşük dayanıklılık |
-| Submission | Tutunca kademeli ezme, can yakma | Mesafede zayıf |
+### 3.2 Beş dövüş stili — her stilin kendi hamle seti var
+| Stil | Hızlı vuruş | Güçlü vuruş | Tutuş özel hamlesi | Zincir |
+|---|---|---|---|---|
+| Sokak | Direkt | Çevirme Yumruk (düşürür) | Kafa Atma (sersemletir) | 3'lü |
+| Kickbox | Hızlı Diz | Palet Tekme (en sert) | Diz Şovu | 3'lü |
+| Güreş | Ağır Tokat (iter) | Omuz Şarjı (şarjlı düşürme) | Suplex (pozisyon değişimi) | 2'li |
+| Dövüş Sanatları | Yıldırım Vuruş (en hızlı) | Dönen Tekme | Savurma (+momentum) | 3'lü |
+| Submission | Pençe | Alçak Tekme (sersemletir) | Eklem Kilidi (can çalar) | 2'li |
 
-Oyuncu kariyerde **ikinci bir stil** satın alıp hibrit kurabilir (orijinaldeki gibi).
+- **Kombo zinciri:** isabet eden vuruş, toparlanma penceresinde tekrar vuruş tuşuyla
+  zincire bağlanır. Hızlı stiller 3'lü, ağır stiller 2'li zincir yapar. Bloklanan/ıskalanan
+  vuruş zinciri keser.
+- **Tutuş özel hamlesi:** tutuş sırasında tekme tuşu — sallama ve fırlatmanın yanındaki
+  üçüncü seçenek.
+- Oyuncu kariyerde **ikinci bir stil** satın alıp hibrit kurabilir.
 
 ### 3.3 Momentum ve BLAZIN
-- Momentum: isabetli vuruş +, başarılı blok/kaçınma +, hasar yiyince −, bloklanınca −.
+- Momentum: isabetli vuruş + (büyük), **hasar yiyince de + (küçük — comeback mekaniği)**,
+  başarılı blok +, bloklanınca −. Bar maç başına 1-2 kez dolacak şekilde ayarlanır;
+  kaybeden taraf da BLAZIN'e ulaşıp maçı çevirebilmelidir.
 - Bar dolunca **BLAZIN!** hazır: aktive et → kısa süreli güç modu; bu sırada grapple
   bağlarsan **sinematik özel hareket** (zaman yavaşlar, kamera yaklaşır, dev hasar).
 - Rakibin canı kritik + BLAZIN hareketi = **K.O. finiş** (maç biter, kalabalık coşar).
@@ -178,6 +185,12 @@ Her sprint sonunda çalışan, denenebilir bir şey çıkar. Oyun **Sprint 2 son
 - HUD cilası (can/momentum barları, portre kutuları, round sayacı).
 - Otopark ve Metro arenaları.
 - **Kabul:** Sesi açıp izleyen biri "bu bir oyun" diyor; üç arena da farklı hissettiriyor.
+
+### Sprint 5.5 — Grafik Revizyonu
+- Detaylı vektör karakterler: kafa/yüz, gövde hacmi, kıyafet, gölgelendirme;
+  daha iri ve okunaklı siluetler.
+- Arena derinliği ve ışıklandırma cilası.
+- **Kabul:** Karakterler "çöp adam" değil "dövüşçü" gibi görünüyor.
 
 ### Sprint 6 — Kariyer Modu ✅ *Tam oyun döngüsü*
 - Kariyer haritası (5 rakip merdiveni), maç sonu para/RESPECT ekranı.

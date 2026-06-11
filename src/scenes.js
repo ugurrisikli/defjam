@@ -157,7 +157,7 @@ Game.scenes.select = {
         ['CAN', (st.hp - 70) / 50, '#6de87a'],
         ['MOMENTUM', (st.momentum - 0.7) / 0.8, '#ffd27a'],
       ];
-      let sy = y + 80;
+      let sy = y + 78;
       for (const [label, v, color] of stats) {
         ctx.font = '10px monospace';
         ctx.textAlign = 'left';
@@ -167,9 +167,18 @@ Game.scenes.select = {
         ctx.fillRect(x + 12, sy + 4, cardW - 24, 8);
         ctx.fillStyle = color;
         ctx.fillRect(x + 12, sy + 4, (cardW - 24) * Math.max(0.08, Math.min(1, v)), 8);
-        sy += 32;
+        sy += 26;
         ctx.textAlign = 'center';
       }
+      // hamle listesi
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#9a8ab0';
+      ctx.fillText('J ' + st.moves.light.name, x + 12, sy + 6);
+      ctx.fillText('K ' + st.moves.heavy.name, x + 12, sy + 20);
+      ctx.fillStyle = '#ff8de8';
+      ctx.fillText('Ö ' + st.moves.special.name + ' · x' + st.chain + ' kombo', x + 12, sy + 34);
+      ctx.textAlign = 'center';
 
       // seçim isaretleri
       if (sel1) {
@@ -330,6 +339,12 @@ Game.scenes.match = {
         break;
       case 'throw':
         this.addText('FIRLATMA!', ev.x, ev.y - 40, '#ffd27a');
+        break;
+      case 'special':
+        this.hitstop = 0.10;
+        this.shake = 9;
+        this.spawnSparks(ev.x, ev.y, 12, '#ff8de8');
+        this.addText(ev.name.toUpperCase() + '!', ev.x, ev.y - 40, '#ff8de8');
         break;
       case 'wallslam':
         this.hitstop = 0.12;
