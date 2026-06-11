@@ -70,6 +70,9 @@ test/               # mantık testleri
   gelirse büyük hasar + sersemletme), veya stil hamlesi.
 - **Blok:** vuruşu keser, momentum kazandırır; tutmaya karşı çaresiz.
 - **Kaçınma (dodge):** kısa pencereli; başarılı kaçınma karşı saldırı fırsatı verir.
+- **Koşu:** ileri yöne çift dokunuş koşu başlatır (yön basılı kaldıkça sürer). Koşudan
+  **yumruk = dalış yumruğu**, **tekme = uçan tekme**: yüksek hasar + yere düşürür ama
+  ıskalarsa/bloklanırsa uzun toparlanma cezası vardır (yüksek risk, yüksek ödül).
 
 ### 3.2 Beş dövüş stili
 | Stil | Güçlü yön | Zayıf yön |
@@ -155,7 +158,8 @@ Her sprint sonunda çalışan, denenebilir bir şey çıkar. Oyun **Sprint 2 son
 - Kulüp arenası tamamlanır (imza nesnesiyle).
 - **Kabul:** Rakibi kalabalığa itip geri gelirken yakalamak ve duvara fırlatmak çalışıyor; oyun bu haliyle eğlenceli.
 
-### Sprint 3 — Stiller, Momentum, BLAZIN
+### Sprint 3 — Stiller, Momentum, BLAZIN, Koşu
+- Çift dokunuşla koşu + koşuya özel dalış yumruğu / uçan tekme.
 - 5 stilin stat ve hamle farkları; stil seçim ekranı.
 - Momentum barı kuralları; BLAZIN modu + sinematik özel hareket (yavaşlatma, kamera yakınlaşma).
 - K.O. finiş sahnesi.

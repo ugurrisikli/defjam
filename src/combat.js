@@ -17,14 +17,21 @@ Game.Combat = {
     const fxY = Game.ARENA.groundY - def.y - 95;
 
     if (def.isBlocking()) {
-      def.x += dir * 14; // blok geri kaydirir ama hasar yok
+      // kosu vurusu blok edilirse daha sert iter; saldirgan momentum kaybeder
+      def.x += dir * (a.lunge > 200 ? 26 : 14);
+      def.addMomentum(5);
+      att.addMomentum(-4);
       return { type: 'block', x: def.x - dir * 20, y: fxY };
     }
-    def.takeHit(a, dir);
+
+    const dmg = Math.round(a.damage * att.strikeMult * (att.blazinTime > 0 ? Game.BLAZIN.strikeMult : 1));
+    def.takeHit({ ...a, damage: dmg }, dir);
+    att.addMomentum(8);
+    def.addMomentum(-6);
     return { type: 'hit', attack: a, x: def.x - dir * 15, y: fxY };
   },
 
-  // Tutma denemesi: blogu DELER. Basarirsa holder/held çiftine geçilir.
+  // Tutma denemesi: blogu DELER. BLAZIN aktifse sinematik özel harekete dönüsür.
   resolveGrab(att, def) {
     if (!att.grabActive()) return null;
     const dx = def.x - att.x;
@@ -32,12 +39,30 @@ Game.Combat = {
     if (Math.abs(dx) > Game.GRAB.reach) return null;
     if (!def.isGrabbable()) return null;
 
+    const fxY = Game.ARENA.groundY - 95;
+
+    if (att.blazinTime > 0) {
+      // BLAZIN ÖZEL HAREKETI: modu tüketir, rakibi ezici güçle savurur
+      att.blazinTime = 0;
+      att.momentum = 0;
+      const dmg = Math.round(Game.BLAZIN.grabDamage * att.grappleMult);
+      def.hp = Math.max(0, def.hp - dmg);
+      def.attack = null;
+      def.impactMult = att.grappleMult;
+      def.kvx = att.facing * Game.BLAZIN.throwSpeed;
+      def.vy = Game.BLAZIN.throwVy;
+      def.y = Math.max(def.y, 1);
+      def.enterState('thrown');
+      att.enterState('blazinpose');
+      return { type: 'blazinmove', x: def.x, y: fxY };
+    }
+
     att.enterState('hold');
     att.holdStrikes = 0;
     def.attack = null;
     def.enterState('held');
     def.facing = -att.facing;
-    return { type: 'grab', x: def.x, y: Game.ARENA.groundY - 95 };
+    return { type: 'grab', x: def.x, y: fxY };
   },
 
   // Tutus sürerken: sallama (yumruk tusu), firlatma (tutma tusu), zaman asimi.
@@ -49,7 +74,10 @@ Game.Combat = {
 
     if (input.punch && att.holdStrikes < 3) {
       att.holdStrikes++;
-      def.hp = Math.max(0, def.hp - 5);
+      const dmg = Math.round(5 * att.grappleMult);
+      def.hp = Math.max(0, def.hp - dmg);
+      if (att.styleData.holdSteal) att.hp = Math.min(att.maxHp, att.hp + 2); // can çalma
+      att.addMomentum(4);
       if (def.hp <= 0) {
         def.kvx = att.facing * 140;
         def.enterState('ko');
@@ -66,11 +94,13 @@ Game.Combat = {
     if (input.grapple) {
       // yön tusuyla geriye dogru da firlatilabilir
       const dir = input.left ? -1 : input.right ? 1 : att.facing;
+      def.impactMult = att.grappleMult;
       def.kvx = dir * Game.THROW.speed;
       def.vy = Game.THROW.liftVy;
       def.y = Math.max(def.y, 1);
       def.enterState('thrown');
       att.enterState('idle');
+      att.addMomentum(10);
       return { type: 'throw', x: def.x, y: A.groundY - 95 };
     }
 

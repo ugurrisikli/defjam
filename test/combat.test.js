@@ -174,3 +174,97 @@ test('havadaki rakip tutulamaz', () => {
   assert.notStrictEqual(p1.state, 'hold');
   assert.notStrictEqual(p2.state, 'held');
 });
+
+// ---- Sprint 3: kosu, stiller, momentum, BLAZIN ----
+
+// çift dokunus: bas, birak, tekrar bas
+function doubleTap(f, dirKey) {
+  f.update(DT, { [dirKey]: true });
+  f.update(DT, {});
+  f.update(DT, { [dirKey]: true });
+}
+
+test('ileri yöne çift dokunus kosu baslatir', () => {
+  const [p1, p2] = makePair(400);
+  doubleTap(p1, 'right');
+  assert.strictEqual(p1.state, 'run');
+  // kosu hizi normal yürüyüsten yüksek
+  const x0 = p1.x;
+  for (let i = 0; i < 30; i++) p1.update(DT, { right: true });
+  const runDist = p1.x - x0;
+  const w = new Game.Fighter({ name: 'W', x: 200, facing: 1, color: '#fff', accent: '#fff' });
+  const wx0 = w.x;
+  for (let i = 0; i < 30; i++) w.update(DT, { right: true });
+  assert.ok(runDist > (w.x - wx0) * 1.5, 'kosu yürüyüsten belirgin hizli olmali');
+});
+
+test('yön birakilinca kosu biter', () => {
+  const [p1] = makePair(400);
+  doubleTap(p1, 'right');
+  p1.update(DT, {});
+  assert.strictEqual(p1.state, 'idle');
+});
+
+test('kosudan yumruk dalis yumruguna dönüsür ve yere düsürür', () => {
+  const [p1, p2] = makePair(220);
+  doubleTap(p1, 'right');
+  // rakibe kosarak yaklas
+  let guard = 0;
+  while (p2.x - p1.x > 80 && guard++ < 120) frames(1, p1, p2, { right: true });
+  assert.strictEqual(p1.state, 'run', 'hala kosuyor olmali');
+  frames(1, p1, p2, { right: true, punch: true });
+  assert.strictEqual(p1.state, 'runpunch', 'kosudan yumruk dalis yumrugu olmali');
+  const events = frames(40, p1, p2);
+  assert.ok(events.some((e) => e.type === 'hit'), 'dalis yumrugu isabet etmeli');
+  assert.strictEqual(p2.hp, 100 - Game.ATTACKS.runpunch.damage);
+  assert.ok(['down', 'getup'].includes(p2.state), 'rakip yere düsmeli');
+});
+
+test('kickbox vuruslari daha sert, güres tutusu daha agir', () => {
+  const kb1 = new Game.Fighter({ name: 'K', x: 400, facing: 1, color: '#fff', accent: '#fff', style: 'kickbox' });
+  const kb2 = new Game.Fighter({ name: 'D', x: 450, facing: -1, color: '#fff', accent: '#fff' });
+  frames(30, kb1, kb2, { punch: true });
+  assert.strictEqual(kb2.hp, 100 - Math.round(6 * 1.3));
+
+  const g1 = new Game.Fighter({ name: 'G', x: 400, facing: 1, color: '#fff', accent: '#fff', style: 'gures' });
+  const g2 = new Game.Fighter({ name: 'D', x: 450, facing: -1, color: '#fff', accent: '#fff' });
+  frames(15, g1, g2, { grapple: true });
+  frames(5, g1, g2, { punch: true });
+  assert.strictEqual(g2.hp, 100 - Math.round(5 * 1.45));
+});
+
+test('isabet momentum kazandirir, hasar yemek momentum kaybettirir', () => {
+  const [p1, p2] = makePair(50);
+  p2.momentum = 50;
+  frames(30, p1, p2, { punch: true });
+  assert.strictEqual(p1.momentum, 8);
+  assert.strictEqual(p2.momentum, 44);
+});
+
+test('bar dolunca BLAZIN aktive edilir, tutus özel harekete dönüsür', () => {
+  const [p1, p2] = makePair(50);
+  p1.momentum = 100;
+  frames(2, p1, p2, { blazin: true });
+  assert.ok(p1.blazinTime > 0, 'BLAZIN modu açilmali');
+  const events = frames(12, p1, p2, { grapple: true });
+  assert.ok(events.some((e) => e.type === 'blazinmove'), 'özel hareket tetiklenmeli');
+  assert.strictEqual(p1.blazinTime, 0, 'mod tükenmeli');
+  assert.ok(p2.hp <= 100 - Game.BLAZIN.grabDamage, 'büyük hasar almali');
+  assert.strictEqual(p2.state, 'thrown');
+});
+
+test('BLAZIN modunda vuruslar güçlenir', () => {
+  const [p1, p2] = makePair(50);
+  p1.blazinTime = 5;
+  frames(30, p1, p2, { punch: true });
+  assert.strictEqual(p2.hp, 100 - Math.round(6 * Game.BLAZIN.strikeMult));
+});
+
+test('submission tutusta can çalar', () => {
+  const s1 = new Game.Fighter({ name: 'S', x: 400, facing: 1, color: '#fff', accent: '#fff', style: 'submission' });
+  const s2 = new Game.Fighter({ name: 'D', x: 450, facing: -1, color: '#fff', accent: '#fff' });
+  s1.hp = 50;
+  frames(15, s1, s2, { grapple: true });
+  frames(5, s1, s2, { punch: true });
+  assert.strictEqual(s1.hp, 52, 'sallama can geri kazandirmali');
+});

@@ -5,6 +5,31 @@ Game.ARENA = { left: 90, right: 870, groundY: 470 };
 // Dövüs olaylari (duvar çarpmasi, kalabalik itmesi...) sahneye bu kuyrukla tasinir.
 Game.events = [];
 
+// Bes dövüs stili: çarpanlar temel degerlere uygulanir.
+Game.STYLES = {
+  sokak: {
+    label: 'SOKAK', desc: 'Dengeli ve hizli',
+    hp: 100, speed: 1.0, strike: 1.0, grapple: 1.0, momentum: 1.0,
+  },
+  kickbox: {
+    label: 'KICKBOX', desc: 'Yikici vuruslar',
+    hp: 95, speed: 1.05, strike: 1.3, grapple: 0.75, momentum: 1.0,
+  },
+  gures: {
+    label: 'GÜRES', desc: 'Tutusta ezici güç',
+    hp: 115, speed: 0.85, strike: 0.8, grapple: 1.45, momentum: 0.9,
+  },
+  sanat: {
+    label: 'DÖVÜS SANATLARI', desc: 'Hiz ve momentum ustasi',
+    hp: 85, speed: 1.15, strike: 0.95, grapple: 0.9, momentum: 1.4,
+  },
+  submission: {
+    label: 'SUBMISSION', desc: 'Tutusta can çalar',
+    hp: 105, speed: 0.9, strike: 0.85, grapple: 1.25, momentum: 1.0, holdSteal: true,
+  },
+};
+Game.STYLE_KEYS = ['sokak', 'kickbox', 'gures', 'sanat', 'submission'];
+
 // Saldiri verileri (süreler saniye, 60 Hz sabit adimda deterministik):
 // startup = hazirlik, active = isabet penceresi, recovery = toparlanma.
 Game.ATTACKS = {
@@ -18,6 +43,17 @@ Game.ATTACKS = {
     damage: 11, reach: 104, hitstun: 0.38, knockback: 190,
     hitstop: 0.09, shake: 8, lunge: 75, knockdown: true,
   },
+  // kosudan yapilan özel vuruslar: yüksek hasar, iskalarsa uzun toparlanma
+  runpunch: {
+    startup: 0.084, active: 0.067, recovery: 0.32,
+    damage: 10, reach: 88, hitstun: 0.4, knockback: 260,
+    hitstop: 0.10, shake: 9, lunge: 240, knockdown: true,
+  },
+  runkick: {
+    startup: 0.117, active: 0.084, recovery: 0.45,
+    damage: 14, reach: 110, hitstun: 0.45, knockback: 320,
+    hitstop: 0.12, shake: 11, lunge: 280, knockdown: true,
+  },
 };
 
 // Tutma denemesi: blok bunu DURDURAMAZ (tas-kagit-makas).
@@ -30,8 +66,18 @@ Game.THROW = {
 
 Game.CROWD = { catchSpeed: 60, holdTime: 0.45, shoveSpeed: 280, staggerTime: 0.8 };
 
+Game.RUN = { speedMult: 1.75, tapWindow: 0.28 };
+
+Game.BLAZIN = {
+  duration: 5, strikeMult: 1.3, grabDamage: 22,
+  throwSpeed: 720, throwVy: 420,
+};
+
 Game.Fighter = class {
   constructor(opts) {
+    const st = Game.STYLES[opts.style || 'sokak'];
+    this.style = opts.style || 'sokak';
+    this.styleData = st;
     this.name = opts.name;
     this.color = opts.color;
     this.accent = opts.accent;
@@ -39,9 +85,12 @@ Game.Fighter = class {
     this.y = 0; // zeminden yükseklik (0 = yerde)
     this.vy = 0;
     this.facing = opts.facing; // 1 saga, -1 sola bakiyor
-    this.maxHp = 100;
-    this.hp = 100;
-    this.speed = 300;
+    this.maxHp = st.hp;
+    this.hp = st.hp;
+    this.speed = 300 * st.speed;
+    this.strikeMult = st.strike;
+    this.grappleMult = st.grapple;
+    this.momentumMult = st.momentum;
     this.jumpVel = 580;
     this.gravity = 1900;
     this.state = 'idle';
@@ -52,9 +101,21 @@ Game.Fighter = class {
     this.kvx = 0; // savrulma hizi
     this.hitstun = 0;
     this.holdStrikes = 0;
+    this.impactMult = 1; // firlatma inis hasari için firlatanin çarpani
+    // kosu (çift dokunus)
+    this.age = 0;
+    this.runDir = 0;
+    this.prevLeft = false;
+    this.prevRight = false;
+    this.lastTapLeft = -10;
+    this.lastTapRight = -10;
+    // momentum / BLAZIN
+    this.momentum = 0;
+    this.blazinTime = 0;
   }
 
   enterState(s) {
+    if (s !== 'run') this.runDir = 0;
     this.state = s;
     this.stateTime = 0;
   }
@@ -65,31 +126,42 @@ Game.Fighter = class {
   }
 
   canTurn() {
-    return this.state === 'idle' || this.state === 'walk' || this.state === 'jump';
+    return ['idle', 'walk', 'jump'].includes(this.state); // kosarken yön kilitli
   }
 
   isVulnerable() {
     return !['down', 'getup', 'ko', 'held', 'thrown', 'crowdhold'].includes(this.state);
   }
 
-  // tutma için: ayakta ve müdahale edilebilir mi (blok KORUMAZ, sersemlik korumaz)
+  // tutma için: ayakta ve müdahale edilebilir mi (blok KORUMAZ)
   isGrabbable() {
-    return ['idle', 'walk', 'block', 'hit', 'staggered', 'punch', 'kick', 'grab'].includes(this.state) && this.y === 0;
+    return ['idle', 'walk', 'run', 'block', 'hit', 'staggered', 'punch', 'kick', 'grab'].includes(this.state) && this.y === 0;
   }
 
   isBlocking() {
     return this.state === 'block';
   }
 
+  addMomentum(v) {
+    if (this.blazinTime > 0) return; // mod aktifken bar yalnizca bosalir
+    if (v > 0) v *= this.momentumMult;
+    this.momentum = Math.max(0, Math.min(100, this.momentum + v));
+  }
+
+  blazinReady() {
+    return this.momentum >= 100 && this.blazinTime <= 0;
+  }
+
   startAttack(name) {
     this.attack = Game.ATTACKS[name];
+    this.attackName = name;
     this.attackHasHit = false;
     this.enterState(name);
   }
 
   // saldirinin isabet penceresi açik mi?
   attackActive() {
-    if (this.state !== 'punch' && this.state !== 'kick') return false;
+    if (!this.attack || this.state !== this.attackName) return false;
     const a = this.attack;
     return this.stateTime >= a.startup && this.stateTime < a.startup + a.active;
   }
@@ -111,27 +183,59 @@ Game.Fighter = class {
   }
 
   // firlatma sonucu: yere veya duvara inis
-  throwImpact(damage, dirAway) {
-    this.hp = Math.max(0, this.hp - damage);
+  throwImpact(baseDamage, dirAway) {
+    const dmg = Math.round(baseDamage * this.impactMult);
+    this.hp = Math.max(0, this.hp - dmg);
     this.kvx = dirAway * 120;
     this.y = Math.min(this.y, 4);
     this.vy = 0;
     this.enterState(this.hp <= 0 ? 'ko' : 'down');
   }
 
+  // ileri yöne çift dokunus kosuyu tetikler
+  detectDash(tapLeft, tapRight) {
+    if (tapRight) {
+      if (this.age - this.lastTapRight < Game.RUN.tapWindow && this.y === 0) this.runDir = 1;
+      this.lastTapRight = this.age;
+    }
+    if (tapLeft) {
+      if (this.age - this.lastTapLeft < Game.RUN.tapWindow && this.y === 0) this.runDir = -1;
+      this.lastTapLeft = this.age;
+    }
+  }
+
   update(dt, input) {
     this.stateTime += dt;
+    this.age += dt;
+    const tapLeft = !!input.left && !this.prevLeft;
+    const tapRight = !!input.right && !this.prevRight;
+    this.prevLeft = !!input.left;
+    this.prevRight = !!input.right;
     const A = Game.ARENA;
+
+    // BLAZIN modu sayaci: bar süreyle birlikte bosalir
+    if (this.blazinTime > 0) {
+      this.blazinTime = Math.max(0, this.blazinTime - dt);
+      this.momentum = 100 * (this.blazinTime / Game.BLAZIN.duration);
+    }
 
     switch (this.state) {
       case 'idle':
       case 'walk':
+      case 'run':
       case 'jump': {
+        this.detectDash(tapLeft, tapRight);
         const dir = (input.right ? 1 : 0) - (input.left ? 1 : 0);
-        this.x += dir * this.speed * dt;
+        const running = this.runDir !== 0 && dir === this.runDir && this.y === 0;
+        if (!running) this.runDir = 0;
+        this.x += dir * this.speed * (running ? Game.RUN.speedMult : 1) * dt;
         if (this.y === 0) {
-          if (input.punch) { this.startAttack('punch'); break; }
-          if (input.kick) { this.startAttack('kick'); break; }
+          if (input.blazin && this.blazinReady()) {
+            this.blazinTime = Game.BLAZIN.duration;
+            Game.events.push({ type: 'blazinon', x: this.x, y: A.groundY - 120 });
+          }
+          if (input.punch) { this.startAttack(running ? 'runpunch' : 'punch'); break; }
+          if (input.kick) { this.startAttack(running ? 'runkick' : 'kick'); break; }
           if (input.grapple) { this.enterState('grab'); break; }
           if (input.block) { this.enterState('block'); break; }
           if (input.jump) this.vy = this.jumpVel;
@@ -141,8 +245,9 @@ Game.Fighter = class {
           this.vy -= this.gravity * dt;
           if (this.y <= 0) { this.y = 0; this.vy = 0; }
         }
-        this.setMoveState(this.y > 0 ? 'jump' : dir !== 0 ? 'walk' : 'idle');
+        this.setMoveState(this.y > 0 ? 'jump' : running ? 'run' : dir !== 0 ? 'walk' : 'idle');
         if (this.state === 'walk') this.walkPhase += dt * 12;
+        else if (this.state === 'run') this.walkPhase += dt * 17;
         break;
       }
 
@@ -151,9 +256,11 @@ Game.Fighter = class {
         break;
 
       case 'punch':
-      case 'kick': {
+      case 'kick':
+      case 'runpunch':
+      case 'runkick': {
         const a = this.attack;
-        // hazirlik+isabet sirasinda öne hamle
+        // hazirlik+isabet sirasinda öne hamle (kosu vuruslarinda uzun dalis)
         if (this.stateTime < a.startup + a.active) this.x += this.facing * a.lunge * dt;
         if (this.stateTime >= a.startup + a.active + a.recovery) {
           this.attack = null;
@@ -171,6 +278,10 @@ Game.Fighter = class {
 
       case 'hold': // konum/eylem yönetimi Combat.updateHold'da (iki dövüsçü gerekir)
       case 'held':
+        break;
+
+      case 'blazinpose': // özel hareket sonrasi kisa zafer durusu
+        if (this.stateTime >= 0.55) this.enterState('idle');
         break;
 
       case 'thrown': {

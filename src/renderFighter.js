@@ -15,11 +15,27 @@ Game.drawFighter = function (ctx, f, t) {
   ctx.fill();
   ctx.restore();
 
+  // BLAZIN aurasi: mod aktifken altin parilti
+  if (f.blazinTime > 0) {
+    ctx.save();
+    const pulse = 0.5 + Math.sin(t * 12) * 0.2;
+    const g = ctx.createRadialGradient(f.x, footY - 60, 10, f.x, footY - 60, 80);
+    g.addColorStop(0, `rgba(255, 200, 60, ${0.35 * pulse + 0.15})`);
+    g.addColorStop(1, 'rgba(255, 200, 60, 0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(f.x - 90, footY - 150, 180, 170);
+    ctx.restore();
+  }
+
   ctx.save();
   ctx.translate(f.x, footY);
   ctx.scale(f.facing, 1);
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
+  if (f.blazinTime > 0) {
+    ctx.shadowColor = '#ffc83c';
+    ctx.shadowBlur = 16;
+  }
 
   // yere serilme (0 ayakta, 1 sirtüstü) ve duruma göre gövde egimi
   let lie = 0;
@@ -33,9 +49,13 @@ Game.drawFighter = function (ctx, f, t) {
   else if (f.state === 'held') ctx.rotate(-0.1);
 
   const breathe = f.state === 'idle' ? Math.sin(t * 2.6) * 2 : 0;
-  const swing = f.state === 'walk' ? Math.sin(f.walkPhase) : 0;
+  const running = f.state === 'run';
+  const swing = f.state === 'walk' || running ? Math.sin(f.walkPhase) : 0;
   const inAir = f.state === 'jump';
   const ext = Game.attackExt(f); // saldiri uzanma orani 0..1
+  if (running) ctx.rotate(0.14); // kosuda öne egilme
+  else if (f.state === 'runpunch') ctx.rotate(0.2 * ext);
+  else if (f.state === 'runkick') ctx.rotate(-0.3 * ext); // uçan tekmede geriye yatis
 
   const hipY = -52 + breathe * 0.4;
   const shoulderY = -96 + breathe;
@@ -50,6 +70,18 @@ Game.drawFighter = function (ctx, f, t) {
     legs = [
       { knee: { x: 18 + 20 * ext, y: hipY * 0.55 - 10 * ext }, foot: { x: 16 + 58 * ext, y: -16 - 36 * ext } },
       { knee: { x: -4, y: hipY * 0.5 }, foot: { x: -10, y: 0 } },
+    ];
+  } else if (f.state === 'runkick') {
+    // uçan tekme: iki bacak birden öne uzanir
+    legs = [
+      { knee: { x: 22 + 18 * ext, y: hipY * 0.6 - 16 * ext }, foot: { x: 20 + 62 * ext, y: -34 - 28 * ext } },
+      { knee: { x: 14 + 14 * ext, y: hipY * 0.6 - 8 * ext }, foot: { x: 12 + 50 * ext, y: -22 - 22 * ext } },
+    ];
+  } else if (running) {
+    // kosu adimi: genis açilan bacaklar
+    legs = [
+      { knee: { x: swing * 16 + 10, y: hipY * 0.5 }, foot: { x: swing * 27, y: -Math.max(0, swing) * 14 } },
+      { knee: { x: -swing * 16 + 10, y: hipY * 0.5 }, foot: { x: -swing * 27, y: -Math.max(0, -swing) * 14 } },
     ];
   } else if (inAir) {
     legs = [
@@ -84,6 +116,20 @@ Game.drawFighter = function (ctx, f, t) {
   if (f.state === 'punch') {
     backArm = { elbow: { x: 18, y: shoulderY + 16 }, fist: { x: 26, y: shoulderY + 6 } };
     frontArm = { elbow: { x: 20, y: shoulderY + 8 }, fist: { x: 30 + 40 * ext, y: shoulderY + 8 } };
+  } else if (f.state === 'runpunch') {
+    // dalis yumrugu: tüm gövdeyle uzanan tek kol
+    backArm = { elbow: { x: -6, y: shoulderY + 18 }, fist: { x: -14, y: shoulderY + 30 } };
+    frontArm = { elbow: { x: 24, y: shoulderY + 6 }, fist: { x: 32 + 50 * ext, y: shoulderY + 2 - 6 * ext } };
+  } else if (f.state === 'runkick') {
+    backArm = { elbow: { x: -8, y: shoulderY + 16 }, fist: { x: -18, y: shoulderY + 26 } };
+    frontArm = { elbow: { x: 6, y: shoulderY + 20 }, fist: { x: -2, y: shoulderY + 34 } };
+  } else if (f.state === 'run') {
+    backArm = { elbow: { x: 14 - swing * 10, y: shoulderY + 18 }, fist: { x: 24 - swing * 16, y: shoulderY + 8 } };
+    frontArm = { elbow: { x: 14 + swing * 10, y: shoulderY + 20 }, fist: { x: 24 + swing * 16, y: shoulderY + 10 } };
+  } else if (f.state === 'blazinpose') {
+    // zafer pozu: yumruk havada
+    backArm = { elbow: { x: 14, y: shoulderY + 18 }, fist: { x: 22, y: shoulderY + 8 } };
+    frontArm = { elbow: { x: 16, y: shoulderY - 14 }, fist: { x: 22, y: shoulderY - 38 } };
   } else if (f.state === 'grab') {
     const gext = Game.grabExt(f);
     backArm = { elbow: { x: 18, y: shoulderY + 18 }, fist: { x: 26 + 26 * gext, y: shoulderY + 18 } };

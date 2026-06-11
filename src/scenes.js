@@ -1,11 +1,12 @@
 window.Game = window.Game || {};
 
 Game.scenes = {};
+Game.matchStyles = { p1: 'sokak', p2: 'sokak' };
 
 // ----- ANA MENÜ -----
 Game.scenes.menu = {
   update() {
-    if (Game.Input.wasPressed('Enter')) Game.changeScene('match');
+    if (Game.Input.wasPressed('Enter')) Game.changeScene('select');
   },
   render(ctx, canvas) {
     const W = canvas.width;
@@ -19,40 +20,177 @@ Game.scenes.menu = {
     ctx.shadowColor = '#ff2d78';
     ctx.shadowBlur = 24;
     ctx.fillStyle = '#ff5e9c';
-    ctx.fillText('SOKAK KRALI', W / 2, 160);
+    ctx.fillText('SOKAK KRALI', W / 2, 150);
     ctx.restore();
 
     ctx.font = '20px monospace';
     ctx.fillStyle = '#8a8a9a';
-    ctx.fillText('Yeralti dövüs arenasina hosgeldin', W / 2, 205);
+    ctx.fillText('Yeralti dövüs arenasina hosgeldin', W / 2, 195);
 
     if (Math.floor(Game.time * 2) % 2 === 0) {
       ctx.font = 'bold 28px monospace';
       ctx.fillStyle = '#ffd27a';
-      ctx.fillText('BASLA — ENTER', W / 2, 290);
+      ctx.fillText('BASLA — ENTER', W / 2, 270);
+    }
+
+    ctx.font = '14px monospace';
+    ctx.fillStyle = '#55556a';
+    ctx.fillText('P1: A/D yürü (çift dokun: KOS) · W zipla · J yumruk · K tekme · L tut · S blok · BOSLUK blazin', W / 2, 360);
+    ctx.fillText('P2: Oklar (çift dokun: KOS) · , yumruk · . tekme · / tut · asagi blok · SAG SHIFT blazin', W / 2, 386);
+    ctx.fillText('Kosarken vurus = dalis yumrugu / uçan tekme (yüksek hasar, yüksek risk)', W / 2, 412);
+    ctx.fillText('Tutunca: yumruk = salla · tutma = firlat (+yön) · Blok tutmayi KESEMEZ', W / 2, 438);
+    ctx.fillText('Momentum barini doldur, BLAZIN ile tutus = ezici özel hareket! · ESC menü', W / 2, 464);
+  },
+};
+
+// ----- STIL SEÇIMI -----
+Game.scenes.select = {
+  enter() {
+    this.i1 = 0;
+    this.i2 = 1;
+    this.lock1 = false;
+    this.lock2 = false;
+    this.startDelay = 0;
+  },
+  update(dt) {
+    const I = Game.Input;
+    const n = Game.STYLE_KEYS.length;
+    if (I.wasPressed('Escape')) { Game.changeScene('menu'); return; }
+
+    if (!this.lock1) {
+      if (I.wasPressed('KeyA')) this.i1 = (this.i1 + n - 1) % n;
+      if (I.wasPressed('KeyD')) this.i1 = (this.i1 + 1) % n;
+      if (I.wasPressed('KeyJ')) this.lock1 = true;
+    } else if (I.wasPressed('KeyK')) this.lock1 = false;
+
+    if (!this.lock2) {
+      if (I.wasPressed('ArrowLeft')) this.i2 = (this.i2 + n - 1) % n;
+      if (I.wasPressed('ArrowRight')) this.i2 = (this.i2 + 1) % n;
+      if (I.wasPressed('Comma')) this.lock2 = true;
+    } else if (I.wasPressed('Period')) this.lock2 = false;
+
+    if (this.lock1 && this.lock2) {
+      this.startDelay += dt;
+      if (this.startDelay >= 0.7) {
+        Game.matchStyles = { p1: Game.STYLE_KEYS[this.i1], p2: Game.STYLE_KEYS[this.i2] };
+        Game.changeScene('match');
+      }
+    } else {
+      this.startDelay = 0;
+    }
+  },
+  render(ctx, canvas) {
+    const W = canvas.width;
+    const H = canvas.height;
+    ctx.fillStyle = '#0a0a0f';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.textAlign = 'center';
+    ctx.save();
+    ctx.font = 'bold 44px Impact, sans-serif';
+    ctx.shadowColor = '#ff2d78';
+    ctx.shadowBlur = 16;
+    ctx.fillStyle = '#ff5e9c';
+    ctx.fillText('STILINI SEÇ', W / 2, 70);
+    ctx.restore();
+
+    const keys = Game.STYLE_KEYS;
+    const cardW = 168;
+    const gap = 12;
+    const total = keys.length * cardW + (keys.length - 1) * gap;
+    let x = (W - total) / 2;
+
+    for (let i = 0; i < keys.length; i++) {
+      const st = Game.STYLES[keys[i]];
+      const y = 120;
+      const cardH = 270;
+      const sel1 = this.i1 === i;
+      const sel2 = this.i2 === i;
+
+      ctx.fillStyle = '#16121e';
+      ctx.fillRect(x, y, cardW, cardH);
+      ctx.lineWidth = 3;
+      if (sel1 && sel2) ctx.strokeStyle = '#b76de8';
+      else if (sel1) ctx.strokeStyle = '#e8512d';
+      else if (sel2) ctx.strokeStyle = '#2d9de8';
+      else ctx.strokeStyle = '#2a2433';
+      ctx.strokeRect(x, y, cardW, cardH);
+
+      ctx.font = 'bold 17px Impact, sans-serif';
+      ctx.fillStyle = '#eee6f5';
+      ctx.fillText(st.label, x + cardW / 2, y + 32);
+      ctx.font = '12px monospace';
+      ctx.fillStyle = '#8a8a9a';
+      ctx.fillText(st.desc, x + cardW / 2, y + 54);
+
+      // stat çubuklari
+      const stats = [
+        ['VURUS', (st.strike - 0.6) / 0.8, '#e8512d'],
+        ['TUTMA', (st.grapple - 0.6) / 0.9, '#2d9de8'],
+        ['HIZ', (st.speed - 0.7) / 0.5, '#e8c12d'],
+        ['CAN', (st.hp - 70) / 50, '#6de87a'],
+        ['MOMENTUM', (st.momentum - 0.7) / 0.8, '#ffd27a'],
+      ];
+      let sy = y + 80;
+      for (const [label, v, color] of stats) {
+        ctx.font = '10px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#8a8a9a';
+        ctx.fillText(label, x + 12, sy);
+        ctx.fillStyle = '#241e2e';
+        ctx.fillRect(x + 12, sy + 4, cardW - 24, 8);
+        ctx.fillStyle = color;
+        ctx.fillRect(x + 12, sy + 4, (cardW - 24) * Math.max(0.08, Math.min(1, v)), 8);
+        sy += 32;
+        ctx.textAlign = 'center';
+      }
+
+      // seçim isaretleri
+      if (sel1) {
+        ctx.fillStyle = '#e8512d';
+        ctx.font = 'bold 13px monospace';
+        ctx.fillText(this.lock1 ? 'P1 HAZIR' : 'P1', x + cardW / 2, y + cardH + 22);
+      }
+      if (sel2) {
+        ctx.fillStyle = '#2d9de8';
+        ctx.font = 'bold 13px monospace';
+        ctx.fillText(this.lock2 ? 'P2 HAZIR' : 'P2', x + cardW / 2, y + cardH + (sel1 ? 42 : 22));
+      }
+      x += cardW + gap;
     }
 
     ctx.font = '15px monospace';
     ctx.fillStyle = '#55556a';
-    ctx.fillText('P1: A/D yürü · W zipla · J yumruk · K tekme · L tut · S blok', W / 2, 390);
-    ctx.fillText('P2: Oklar · , yumruk · . tekme · / tut · asagi ok blok', W / 2, 416);
-    ctx.fillText('Tutunca: yumruk tusu = salla · tutma tusu = firlat (+yön)', W / 2, 442);
-    ctx.fillText('Blok vurusu keser ama TUTMAYI KESEMEZ! · ESC menü', W / 2, 468);
+    ctx.fillText('P1: A/D seç · J onayla · K geri al     P2: ←/→ seç · , onayla · . geri al', W / 2, H - 40);
+    if (this.lock1 && this.lock2) {
+      ctx.font = 'bold 24px monospace';
+      ctx.fillStyle = '#ffd27a';
+      ctx.fillText('DÖVÜS BASLIYOR...', W / 2, H - 80);
+    }
   },
 };
 
 // ----- MAÇ -----
 Game.scenes.match = {
   enter() {
-    this.p1 = new Game.Fighter({ name: 'OYUNCU 1', x: 320, facing: 1, color: '#e8512d', accent: '#ffd27a' });
-    this.p2 = new Game.Fighter({ name: 'OYUNCU 2', x: 640, facing: -1, color: '#2d9de8', accent: '#aef3ff' });
+    this.p1 = new Game.Fighter({
+      name: 'OYUNCU 1', x: 320, facing: 1, color: '#e8512d', accent: '#ffd27a',
+      style: Game.matchStyles.p1,
+    });
+    this.p2 = new Game.Fighter({
+      name: 'OYUNCU 2', x: 640, facing: -1, color: '#2d9de8', accent: '#aef3ff',
+      style: Game.matchStyles.p2,
+    });
     this.phase = 'intro'; // intro -> fight -> over
     this.phaseTime = 0;
     this.hitstop = 0;
     this.shake = 0;
+    this.slowmo = 0; // BLAZIN sinematigi: agir çekim süresi
     this.sparks = [];
     this.texts = [];
     this.winner = null;
+    this.koByBlazin = false;
+    this.blazinWindow = 0;
     Game.events.length = 0;
   },
 
@@ -63,7 +201,11 @@ Game.scenes.match = {
       return;
     }
     this.phaseTime += dt;
-    this.updateFx(dt);
+    this.slowmo = Math.max(0, this.slowmo - dt);
+    this.blazinWindow = Math.max(0, (this.blazinWindow || 0) - dt);
+    const ts = this.slowmo > 0 ? 0.35 : 1; // agir çekim çarpani
+    const gdt = dt * ts;
+    this.updateFx(gdt);
     this.shake *= Math.max(0, 1 - 10 * dt);
 
     // hit-stop: vurus ani donar, sadece efektler akar
@@ -74,16 +216,16 @@ Game.scenes.match = {
 
     const idle = {};
     if (this.phase === 'intro') {
-      this.p1.update(dt, idle);
-      this.p2.update(dt, idle);
+      this.p1.update(gdt, idle);
+      this.p2.update(gdt, idle);
       if (this.phaseTime >= 1.1) { this.phase = 'fight'; this.phaseTime = 0; }
       return;
     }
 
     if (this.phase === 'over') {
-      if (I.wasPressed('Enter')) { this.enter(); return; }
-      this.p1.update(dt, idle);
-      this.p2.update(dt, idle);
+      if (I.wasPressed('Enter')) { Game.changeScene('select'); return; }
+      this.p1.update(gdt, idle);
+      this.p2.update(gdt, idle);
       this.drainEvents();
       return;
     }
@@ -93,16 +235,18 @@ Game.scenes.match = {
       left: I.isDown('KeyA'), right: I.isDown('KeyD'), jump: I.isDown('KeyW'),
       punch: I.wasPressed('KeyJ'), kick: I.wasPressed('KeyK'),
       grapple: I.wasPressed('KeyL'), block: I.isDown('KeyS'),
+      blazin: I.wasPressed('Space'),
     };
     const in2 = {
       left: I.isDown('ArrowLeft'), right: I.isDown('ArrowRight'), jump: I.isDown('ArrowUp'),
       punch: I.wasPressed('Comma'), kick: I.wasPressed('Period'),
       grapple: I.wasPressed('Slash'), block: I.isDown('ArrowDown'),
+      blazin: I.wasPressed('ShiftRight'),
     };
-    this.p1.update(dt, in1);
-    this.p2.update(dt, in2);
+    this.p1.update(gdt, in1);
+    this.p2.update(gdt, in2);
 
-    // dövüsçüler birbirine bakar (saldiri sirasinda yön kilitli)
+    // dövüsçüler birbirine bakar (saldiri/kosu sirasinda yön kilitli)
     if (this.p1.canTurn()) this.p1.facing = this.p2.x >= this.p1.x ? 1 : -1;
     if (this.p2.canTurn()) this.p2.facing = this.p1.x >= this.p2.x ? 1 : -1;
 
@@ -119,6 +263,7 @@ Game.scenes.match = {
       this.phase = 'over';
       this.phaseTime = 0;
       this.winner = this.p1.hp > 0 ? this.p1 : this.p2;
+      this.koByBlazin = this.blazinWindow > 0;
     }
   },
 
@@ -172,6 +317,19 @@ Game.scenes.match = {
       case 'escape':
         this.addText('KURTULDU!', ev.x, ev.y - 40, '#cfd8ff');
         break;
+      case 'blazinon':
+        this.shake = 6;
+        this.spawnSparks(ev.x, ev.y, 14, '#ffc83c');
+        this.addText('BLAZIN!', ev.x, ev.y - 30, '#ffc83c');
+        break;
+      case 'blazinmove':
+        this.hitstop = 0.16;
+        this.slowmo = 1.2;
+        this.shake = 14;
+        this.spawnSparks(ev.x, ev.y, 22, '#ffc83c');
+        this.addText('BLAZIN HAREKETI!!', ev.x, ev.y - 50, '#ffc83c');
+        this.blazinWindow = 2.0; // bu pencerede gelen K.O. "BLAZIN K.O." sayilir
+        break;
     }
   },
 
@@ -204,9 +362,19 @@ Game.scenes.match = {
   },
 
   render(ctx, canvas) {
+    const W = canvas.width;
     ctx.save();
     if (this.shake > 0.3) {
       ctx.translate((Math.random() - 0.5) * this.shake * 2, (Math.random() - 0.5) * this.shake * 2);
+    }
+    // BLAZIN sinematigi: dövüsçülerin ortasina yumusak zoom
+    if (this.slowmo > 0) {
+      const prog = Math.min(1, (1.2 - this.slowmo) / 1.2);
+      const z = 1 + 0.32 * Math.sin(prog * Math.PI);
+      const cx = Math.max(240, Math.min(W - 240, (this.p1.x + this.p2.x) / 2));
+      ctx.translate(W / 2, 300);
+      ctx.scale(z, z);
+      ctx.translate(-cx, -300);
     }
     Game.Arena.draw(ctx, Game.time);
     const order = this.p1.y <= this.p2.y ? [this.p2, this.p1] : [this.p1, this.p2];
@@ -233,23 +401,38 @@ Game.scenes.match = {
 
   drawHud(ctx, canvas) {
     const W = canvas.width;
-    this.drawHealthBar(ctx, 24, 22, 360, this.p1, false);
-    this.drawHealthBar(ctx, W - 24 - 360, 22, 360, this.p2, true);
+    this.drawBars(ctx, 24, 22, 360, this.p1, false);
+    this.drawBars(ctx, W - 24 - 360, 22, 360, this.p2, true);
   },
 
-  drawHealthBar(ctx, x, y, w, f, mirrored) {
+  drawBars(ctx, x, y, w, f, mirrored) {
+    // can
     ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    ctx.fillRect(x - 3, y - 3, w + 6, 24);
+    ctx.fillRect(x - 3, y - 3, w + 6, 38);
     ctx.fillStyle = '#3a1020';
     ctx.fillRect(x, y, w, 18);
     const ratio = f.hp / f.maxHp;
     const fw = w * ratio;
     ctx.fillStyle = ratio > 0.35 ? '#e8c12d' : '#e8512d';
     ctx.fillRect(mirrored ? x + w - fw : x, y, fw, 18);
+    // momentum
+    ctx.fillStyle = '#1c1828';
+    ctx.fillRect(x, y + 22, w, 9);
+    const mw = w * (f.momentum / 100);
+    const full = f.blazinReady();
+    const flash = full && Math.floor(Game.time * 6) % 2 === 0;
+    ctx.fillStyle = f.blazinTime > 0 ? '#ffc83c' : flash ? '#fff3c0' : '#c89a2e';
+    ctx.fillRect(mirrored ? x + w - mw : x, y + 22, mw, 9);
+    // isim + stil
     ctx.font = 'bold 14px monospace';
     ctx.textAlign = mirrored ? 'right' : 'left';
     ctx.fillStyle = f.color;
-    ctx.fillText(f.name, mirrored ? x + w : x, y + 36);
+    const label = f.name + ' · ' + f.styleData.label;
+    ctx.fillText(label, mirrored ? x + w : x, y + 50);
+    if (full) {
+      ctx.fillStyle = '#ffc83c';
+      ctx.fillText('BLAZIN HAZIR!', mirrored ? x + w : x, y + 68);
+    }
   },
 
   drawBanners(ctx, canvas) {
@@ -278,10 +461,10 @@ Game.scenes.match = {
     } else if (this.phase === 'over') {
       ctx.save();
       ctx.font = 'bold 84px Impact, sans-serif';
-      ctx.shadowColor = '#ff2d78';
+      ctx.shadowColor = this.koByBlazin ? '#ffc83c' : '#ff2d78';
       ctx.shadowBlur = 28;
-      ctx.fillStyle = '#ff5e9c';
-      ctx.fillText('K.O.!', W / 2, 230);
+      ctx.fillStyle = this.koByBlazin ? '#ffc83c' : '#ff5e9c';
+      ctx.fillText(this.koByBlazin ? 'BLAZIN K.O.!' : 'K.O.!', W / 2, 230);
       ctx.restore();
       ctx.font = 'bold 30px monospace';
       ctx.fillStyle = this.winner.color;
@@ -289,7 +472,7 @@ Game.scenes.match = {
       if (this.phaseTime > 1 && Math.floor(Game.time * 2) % 2 === 0) {
         ctx.font = 'bold 20px monospace';
         ctx.fillStyle = '#ffd27a';
-        ctx.fillText('ENTER — tekrar maç · ESC — menü', W / 2, 340);
+        ctx.fillText('ENTER — yeni dövüs · ESC — menü', W / 2, 340);
       }
     }
   },
