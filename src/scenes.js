@@ -51,11 +51,14 @@ Game.scenes.select = {
     this.lock1 = false;
     this.lock2 = false;
     this.startDelay = 0;
+    // önceki ekrandan tasinan Enter basisinin P2'yi aninda onaylamasini önler
+    this.inputCooldown = 0.15;
   },
   update(dt) {
     const I = Game.Input;
     const n = Game.STYLE_KEYS.length;
     if (I.wasPressed('Escape')) { Game.changeScene('menu'); return; }
+    if (this.inputCooldown > 0) { this.inputCooldown -= dt; return; }
 
     if (!this.lock1) {
       if (I.wasPressed('KeyA')) this.i1 = (this.i1 + n - 1) % n;
@@ -66,7 +69,7 @@ Game.scenes.select = {
     if (!this.lock2) {
       if (I.wasPressed('ArrowLeft')) this.i2 = (this.i2 + n - 1) % n;
       if (I.wasPressed('ArrowRight')) this.i2 = (this.i2 + 1) % n;
-      if (I.wasPressed('Comma')) this.lock2 = true;
+      if (I.wasPressed('Enter')) this.lock2 = true;
     } else if (I.wasPressed('Period')) this.lock2 = false;
 
     if (this.lock1 && this.lock2) {
@@ -161,7 +164,7 @@ Game.scenes.select = {
 
     ctx.font = '15px monospace';
     ctx.fillStyle = '#55556a';
-    ctx.fillText('P1: A/D seç · J onayla · K geri al     P2: ←/→ seç · , onayla · . geri al', W / 2, H - 40);
+    ctx.fillText('P1: A/D seç · J onayla · K geri al     P2: ←/→ seç · ENTER onayla · . geri al', W / 2, H - 40);
     if (this.lock1 && this.lock2) {
       ctx.font = 'bold 24px monospace';
       ctx.fillStyle = '#ffd27a';
