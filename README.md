@@ -13,13 +13,24 @@ Kurulum gerekmez: `index.html` dosyasını tarayıcıda aç, hepsi bu.
 |---|---|---|
 | Yürü | A / D | ← / → |
 | Zıpla | W | ↑ |
-| Başlat / Menü | Enter / ESC | |
+| Yumruk | J | , |
+| Tekme | K | . |
+| Blok | S (basılı tut) | ↓ (basılı tut) |
+| Başlat / Tekrar maç / Menü | Enter / ESC | |
+
+## Testler
+
+```
+node --test test/combat.test.js
+```
 
 ## Durum
 
 - [x] **Sprint 0 — İskelet:** oyun döngüsü, sahneler (menü ↔ maç), klavye girişi,
       eklemli vektör dövüşçüler, kulüp arenası ve kalabalık
-- [ ] Sprint 1 — Çekirdek dövüş (vuruş, blok, can, K.O.)
+- [x] **Sprint 1 — Çekirdek dövüş:** yumruk/tekme (hazırlık-isabet-toparlanma kareleri),
+      blok, can barları, savrulma, yere düşme/kalkma, K.O., hit-stop + ekran sarsıntısı,
+      kıvılcım efektleri, maç akışı (HAZIR → DÖVÜŞ → K.O. → tekrar)
 - [ ] Sprint 2 — Grapple ve çevre etkileşimi *(ilk oynanabilir sürüm)*
 - [ ] Sprint 3 — Stiller, momentum, BLAZIN
 - [ ] Sprint 4 — AI rakip
