@@ -80,5 +80,6 @@ node --test test/combat.test.js test/ai.test.js
       senkron (gerilme→temas→toparlanma), 85 ms poz harmanlama (ani geçiş yok),
       bölgesel hasar tepkileri (kafa/gövde/diz), stile özel yürüyüş gait'i ve blok,
       tutuş boğuşması/suplex kavisi/kalkış koreografileri
-- [ ] Sprint 5 — Juice ve sunum
-- [ ] Sprint 6 — Kariyer modu *(tam oyun döngüsü)*
+- [ ] Sprint 6B — Oynanış: girdi tamponu, kaçınma/parry, juggle, hibrit kombo sistemi
+- [ ] Sprint 6C — Sunum: dinamik kamera, smear/darbe kareleri, partikül/decal, rim light
+- [ ] Sprint 7 — Kariyer modu *(tam oyun döngüsü, ertelendi)*
