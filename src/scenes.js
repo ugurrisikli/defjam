@@ -610,15 +610,22 @@ Game.scenes.match = {
     if (this.shake > 0.3) {
       ctx.translate((Math.random() - 0.5) * this.shake * 2, (Math.random() - 0.5) * this.shake * 2);
     }
-    // BLAZIN sinematigi: dövüsçülerin ortasina yumusak zoom
+    // DINAMIK KAMERA: iki dövüsçüyü takip eder, yaklastikça zoom yapar.
+    // BLAZIN sinematiginde ekstra yakinlasir. HUD bu dönüsümün disindadir.
+    if (!this.cam) this.cam = { x: W / 2, z: 1 };
+    const dist = Math.abs(this.p1.x - this.p2.x);
+    let tz = Math.max(1.0, Math.min(1.45, 700 / (dist + 240)));
     if (this.slowmo > 0) {
       const prog = Math.min(1, (1.2 - this.slowmo) / 1.2);
-      const z = 1 + 0.32 * Math.sin(prog * Math.PI);
-      const cx = Math.max(240, Math.min(W - 240, (this.p1.x + this.p2.x) / 2));
-      ctx.translate(W / 2, 300);
-      ctx.scale(z, z);
-      ctx.translate(-cx, -300);
+      tz = Math.min(1.7, tz + 0.35 * Math.sin(prog * Math.PI));
     }
+    this.cam.z += (tz - this.cam.z) * 0.10;
+    this.cam.x += ((this.p1.x + this.p2.x) / 2 - this.cam.x) * 0.12;
+    const vh = W / 2 / this.cam.z;
+    const cx = Math.max(vh, Math.min(W - vh, this.cam.x));
+    ctx.translate(W / 2, H * 0.86);
+    ctx.scale(this.cam.z, this.cam.z);
+    ctx.translate(-cx, -Game.ARENA.groundY);
     Game.Arena.draw(ctx, Game.time, this.hype);
     const order = this.p1.y <= this.p2.y ? [this.p2, this.p1] : [this.p1, this.p2];
     this.drawReflections(ctx, order);

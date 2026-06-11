@@ -86,5 +86,10 @@ node --test test/combat.test.js test/ai.test.js
       bağlanır), 10 isimli hedef kombo (Kaldırım Klasiği, Boğa Dalışı...), hasar
       ölçekleme ×0.85ⁿ, momentum harcayan zincir uzatma, duvar sektirme bitiricileri,
       kombo sayacı UI
-- [ ] Sprint 6C — Sunum: dinamik kamera, smear/darbe kareleri, partikül/decal, rim light
+- [x] **Sprint 6.5 — Sprite pipeline + dinamik kamera:** assets/<stil>.png+json bulunca
+      sprite ile çizim (frame-data senkron oynatma, eksik animasyonda akraba klibe
+      düşme, asset yoksa vektör fallback), boyalı anime asset üretim rehberi
+      (ASSETS.md), dövüşçüleri takip eden zoom'lu dinamik kamera (1.0–1.45×),
+      vektör kuklaya cel-shade kontur
+- [ ] Sprint 6C — Sunum cilası: smear/darbe kareleri, partikül/decal, rim light
 - [ ] Sprint 7 — Kariyer modu *(tam oyun döngüsü, ertelendi)*

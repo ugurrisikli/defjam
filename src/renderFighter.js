@@ -10,8 +10,15 @@ Game.STYLE_LOOK = {
   submission: { skin: '#b97f55', hair: '#15100d', hairStyle: 'mohawk', outfit: 'rash', pants: 'shorts2', build: 1.1 },
 };
 
-// Incelen uzuv: kalin üst segment + ince alt segment
+// Incelen uzuv: koyu kontur + kalin üst segment + ince alt segment (cel-shade)
 function limb(ctx, x0, y0, x1, y1, x2, y2, w1, w2, c1, c2) {
+  ctx.strokeStyle = '#14101a';
+  ctx.lineWidth = w1 + 3.5;
+  ctx.beginPath();
+  ctx.moveTo(x0, y0);
+  ctx.lineTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
   ctx.strokeStyle = c1;
   ctx.lineWidth = w1;
   ctx.beginPath();
@@ -27,6 +34,8 @@ function limb(ctx, x0, y0, x1, y1, x2, y2, w1, w2, c1, c2) {
 }
 
 Game.drawFighter = function (ctx, f, t, opts = {}) {
+  // sprite sheet varsa o çizer; yoksa vektör kukla (fallback) devam eder
+  if (Game.Sprites && Game.Sprites.draw(ctx, f, t, opts)) return;
   const groundY = Game.ARENA.groundY;
   const footY = groundY - f.y;
   const look = Game.STYLE_LOOK[f.style] || Game.STYLE_LOOK.sokak;
@@ -169,6 +178,9 @@ Game.drawFighter = function (ctx, f, t, opts = {}) {
   ctx.lineTo(-hpW + 2, hipY + 6);
   ctx.quadraticCurveTo(-shW - 2, shoulderY + 24, -shW + 4, shoulderY - 4);
   ctx.closePath();
+  ctx.strokeStyle = '#14101a'; // kontur
+  ctx.lineWidth = 3;
+  ctx.stroke();
   if (look.outfit === 'bare') {
     ctx.fillStyle = skin;
     ctx.fill();
