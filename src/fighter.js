@@ -343,6 +343,10 @@ Game.Fighter = class {
         if (this.stateTime >= 0.55) this.enterState('idle');
         break;
 
+      case 'specialmove': // tutus özel hamlesi koreografisi
+        if (this.stateTime >= 0.45) this.enterState('idle');
+        break;
+
       case 'thrown': {
         this.x += this.kvx * dt;
         this.y += this.vy * dt;

@@ -531,8 +531,10 @@ Game.scenes.match = {
       Game.Arena.draw(ctx, Game.time, 1);
       if (snap) {
         const order = snap.p1.y <= snap.p2.y ? [snap.p2, snap.p1] : [snap.p1, snap.p2];
+        this.drawReflections(ctx, order);
         for (const f of order) Game.drawFighter(ctx, f, Game.time);
       }
+      Game.Arena.overlay(ctx, Game.time, 1);
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, W, 60);
       ctx.fillRect(0, H - 60, W, 60);
@@ -562,7 +564,9 @@ Game.scenes.match = {
     }
     Game.Arena.draw(ctx, Game.time, this.hype);
     const order = this.p1.y <= this.p2.y ? [this.p2, this.p1] : [this.p1, this.p2];
+    this.drawReflections(ctx, order);
     for (const f of order) Game.drawFighter(ctx, f, Game.time);
+    Game.Arena.overlay(ctx, Game.time, this.hype);
     for (const p of this.sparks) {
       ctx.globalAlpha = Math.max(0, p.life / 0.4);
       ctx.fillStyle = p.color;
@@ -581,6 +585,16 @@ Game.scenes.match = {
 
     this.drawHud(ctx, canvas);
     this.drawBanners(ctx, canvas);
+  },
+
+  // parlak zeminde soluk ayna görüntüsü
+  drawReflections(ctx, order) {
+    ctx.save();
+    ctx.globalAlpha = 0.14;
+    ctx.translate(0, (Game.ARENA.groundY + 9) * 2);
+    ctx.scale(1, -1);
+    for (const f of order) Game.drawFighter(ctx, f, Game.time, { plain: true });
+    ctx.restore();
   },
 
   drawHud(ctx, canvas) {

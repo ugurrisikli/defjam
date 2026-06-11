@@ -106,6 +106,37 @@ Game.Arena = (function () {
       ctx.fillRect(lx - 5, 114, 10, 7);
     }
 
+    // duvar grafitileri
+    ctx.save();
+    ctx.font = 'bold 30px Impact, sans-serif';
+    ctx.translate(180, 240);
+    ctx.rotate(-0.08);
+    ctx.fillStyle = 'rgba(183, 109, 232, 0.30)';
+    ctx.fillText('YERALTI', 0, 0);
+    ctx.restore();
+    ctx.save();
+    ctx.font = 'bold 24px Impact, sans-serif';
+    ctx.translate(740, 220);
+    ctx.rotate(0.06);
+    ctx.fillStyle = 'rgba(45, 157, 232, 0.28)';
+    ctx.fillText('KRAL KIM?', 0, 0);
+    ctx.restore();
+    // tavandan sarkan ampul dizisi
+    ctx.strokeStyle = 'rgba(60,55,75,0.9)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 96);
+    ctx.quadraticCurveTo(W / 2, 150, W, 96);
+    ctx.stroke();
+    for (let i = 1; i < 8; i++) {
+      const bx = (W / 8) * i;
+      const by = 96 + Math.sin((i / 8) * Math.PI) * 50;
+      ctx.fillStyle = i % 2 ? '#ffd27a' : '#ff5e9c';
+      ctx.beginPath();
+      ctx.arc(bx, by + 6, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
     drawFloor(ctx, groundY, '#2a2233', '#121018');
     drawCrowd(ctx, clubCrowd, t, hype);
 
@@ -165,11 +196,34 @@ Game.Arena = (function () {
       ctx.closePath();
       ctx.fill();
     }
-    // kat yazisi
+    // tavan borulari
+    ctx.strokeStyle = '#22262d';
+    ctx.lineWidth = 9;
+    ctx.beginPath();
+    ctx.moveTo(0, 36);
+    ctx.lineTo(W, 36);
+    ctx.moveTo(0, 50);
+    ctx.lineTo(W, 50);
+    ctx.stroke();
+    ctx.fillStyle = '#272b33';
+    for (const px of [150, 450, 750]) ctx.fillRect(px, 30, 14, 28);
+    // kat yazisi + çikis tabelasi
     ctx.font = 'bold 64px Impact, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(232, 193, 45, 0.18)';
     ctx.fillText('KAT -3', W / 2, 200);
+    ctx.fillStyle = 'rgba(110, 232, 122, 0.8)';
+    ctx.fillRect(826, 110, 74, 26);
+    ctx.fillStyle = '#0c1410';
+    ctx.font = 'bold 16px monospace';
+    ctx.fillText('ÇIKIS →', 863, 129);
+    // duvar dibinde çöp torbalari
+    for (const [gx, gw] of [[120, 30], [148, 22], [806, 28]]) {
+      ctx.fillStyle = '#181a1f';
+      ctx.beginPath();
+      ctx.ellipse(gx, 318, gw * 0.6, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     // park halindeki arabalar (kalabaligin arkasinda)
     for (const c of parkCars) {
@@ -264,6 +318,23 @@ Game.Arena = (function () {
     ctx.fillStyle = '#9fe8ff';
     ctx.fillText('SON DURAK', W / 2, 133);
 
+    // fayans üstü reklam afisleri
+    for (const [ax, c1, txt] of [[80, '#7a3b8f', 'GECE 22:00'], [610, '#8f5a2b', 'DÖVÜS GECESI'], [800, '#2b6b8f', 'SAKIZ']]) {
+      ctx.fillStyle = c1;
+      ctx.fillRect(ax, 168, 110, 74);
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(ax + 5, 173, 100, 64);
+      ctx.font = 'bold 12px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.fillText(txt, ax + 55, 210);
+    }
+    // perondan yükselen buhar
+    ctx.fillStyle = `rgba(200, 220, 230, ${0.05 + Math.sin(t * 0.9) * 0.02})`;
+    ctx.beginPath();
+    ctx.ellipse(120 + Math.sin(t * 0.5) * 18, 250, 60, 110, 0.2, 0, Math.PI * 2);
+    ctx.fill();
     // duran tren: pencerelerinden hafif isik
     const ty = 270;
     ctx.fillStyle = '#232a31';
@@ -303,13 +374,64 @@ Game.Arena = (function () {
   }
 
   const ARENAS = {
-    club: { label: 'KULÜP', music: { bpm: 96, bass: [55, 55, 65.4, 49] }, draw: drawClub },
-    otopark: { label: 'OTOPARK', music: { bpm: 86, bass: [49, 49, 58.3, 43.7] }, draw: drawPark },
-    metro: { label: 'METRO', music: { bpm: 106, bass: [61.7, 61.7, 73.4, 55] }, draw: drawMetro },
+    club: {
+      label: 'KULÜP', music: { bpm: 96, bass: [55, 55, 65.4, 49] }, draw: drawClub,
+      lights: [140, 370, 600, 830].map((x) => ({ x, y: 118 })), tint: '255,160,120',
+    },
+    otopark: {
+      label: 'OTOPARK', music: { bpm: 86, bass: [49, 49, 58.3, 43.7] }, draw: drawPark,
+      lights: [90, 290, 490, 690, 890].map((x) => ({ x, y: 70 })), tint: '170,215,255',
+    },
+    metro: {
+      label: 'METRO', music: { bpm: 106, bass: [61.7, 61.7, 73.4, 55] }, draw: drawMetro,
+      lights: [180, 480, 780].map((x) => ({ x, y: 58 })), tint: '190,235,255',
+    },
   };
   const KEYS = Object.keys(ARENAS);
 
   let current = 'club';
+
+  // Isik/atmosfer katmani: dövüsçülerin ÜSTÜNE çizilir.
+  // Hüzmeler karaktere vurur, toz zerreleri yüzer, kenarlar vinyetle kararir.
+  function overlay(ctx, t, hype) {
+    const a = ARENAS[current];
+    const groundY = Game.ARENA.groundY;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const L of a.lights) {
+      const flick = 0.8 + Math.sin(t * 9 + L.x) * 0.08 + hype * 0.25;
+      const g = ctx.createLinearGradient(0, L.y, 0, groundY + 30);
+      g.addColorStop(0, `rgba(${a.tint},${0.10 * flick})`);
+      g.addColorStop(1, `rgba(${a.tint},0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(L.x - 26, L.y);
+      ctx.lineTo(L.x - 95, groundY + 30);
+      ctx.lineTo(L.x + 95, groundY + 30);
+      ctx.lineTo(L.x + 26, L.y);
+      ctx.closePath();
+      ctx.fill();
+      // zeminde isik gölü
+      ctx.fillStyle = `rgba(${a.tint},${0.05 * flick})`;
+      ctx.beginPath();
+      ctx.ellipse(L.x, groundY + 14, 95, 16, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // yüzen toz zerreleri
+    ctx.fillStyle = 'rgba(255,255,255,0.10)';
+    for (let i = 0; i < 16; i++) {
+      const dx = ((i * 137 + t * (6 + (i % 5))) % 990) - 15;
+      const dy = 110 + ((i * 71) % 320) + Math.sin(t * 0.8 + i) * 12;
+      ctx.fillRect(dx, dy, 2, 2);
+    }
+    ctx.restore();
+    // vinyet
+    const v = ctx.createRadialGradient(480, 250, 250, 480, 270, 580);
+    v.addColorStop(0, 'rgba(0,0,0,0)');
+    v.addColorStop(1, 'rgba(8,6,12,0.45)');
+    ctx.fillStyle = v;
+    ctx.fillRect(0, 0, W, 540);
+  }
 
   return {
     KEYS,
@@ -318,5 +440,6 @@ Game.Arena = (function () {
     set(key) { current = ARENAS[key] ? key : 'club'; },
     random() { current = KEYS[Math.floor(Math.random() * KEYS.length)]; return current; },
     draw(ctx, t, hype = 0) { ARENAS[current].draw(ctx, t, Math.max(0, Math.min(1, hype))); },
+    overlay,
   };
 })();

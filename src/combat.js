@@ -99,7 +99,7 @@ Game.Combat = {
       } else {
         def.takeHit({ ...att.moves.light, damage: 0, knockback: 200 }, att.facing);
       }
-      att.enterState('idle');
+      att.enterState('specialmove');
       return { type: 'special', name: sp.name, x: def.x, y: A.groundY - 95 };
     }
 
