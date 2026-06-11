@@ -14,6 +14,12 @@ window.Game = window.Game || {};
 
   Game.time = 0; // animasyonlar için toplam oyun süresi (saniye)
 
+  // tarayici ses politikasi: ilk tusta sesi aç; M ile sustur
+  window.addEventListener('keydown', (e) => {
+    Game.Audio.unlock();
+    if (e.code === 'KeyM') Game.Audio.toggleMute();
+  });
+
   Game.changeScene = function (name) {
     scene = Game.scenes[name];
     if (scene.enter) scene.enter();
@@ -25,6 +31,7 @@ window.Game = window.Game || {};
 
     while (accumulator >= STEP) {
       scene.update(STEP);
+      Game.Audio.update(STEP);
       Game.time += STEP;
       accumulator -= STEP;
     }

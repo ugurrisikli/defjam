@@ -30,7 +30,7 @@ Game.Combat = {
     def.takeHit({ ...a, damage: dmg }, dir);
     att.addMomentum(MO.hitGive);
     def.addMomentum(MO.hitTake); // hasar yiyen de bar doldurur (comeback)
-    return { type: 'hit', attack: a, x: def.x - dir * 15, y: fxY };
+    return { type: 'hit', attack: a, chain: att.chainCount, x: def.x - dir * 15, y: fxY };
   },
 
   // Tutma denemesi: blogu DELER. BLAZIN aktifse sinematik özel harekete dönüsür.

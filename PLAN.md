@@ -179,7 +179,7 @@ Her sprint sonunda çalışan, denenebilir bir şey çıkar. Oyun **Sprint 2 son
 - **Test:** AI'ın karar dağılımı simülasyonla doğrulanır (ör. Ayı maç başına X kez tutma denemeli), AI vs AI maç simülasyonu çökmeden tamamlanmalı.
 - **Kabul:** Tek başına oynanan maç zorlayıcı ve adil hissettiriyor.
 
-### Sprint 5 — Juice ve Sunum
+### Sprint 5 — Juice ve Sunum ✅
 - Partiküller, kalabalık tepkileri, anonsör metinleri, K.O. tekrarı.
 - WebAudio prosedürel sesler (vuruş, kalabalık, bas ritmi).
 - HUD cilası (can/momentum barları, portre kutuları, round sayacı).

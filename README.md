@@ -70,5 +70,10 @@ node --test test/combat.test.js test/ai.test.js
 - [x] **Sprint 4.5 — Stil hamleleri ve denge:** stile özel hızlı/güçlü vuruşlar ve tutuş
       özel hamleleri (Suplex, Eklem Kilidi...), kombo zinciri (2'li/3'lü), momentum
       comeback ekonomisi, AI kombo/özel hamle kullanımı
+- [x] **Sprint 5 — Juice ve sunum:** prosedürel WebAudio (vuruş sesleri, kalabalık
+      uğultusu/tezahürat, arena başına bas ritmi — M ile sustur), üç arena (Kulüp,
+      Otopark, Metro), 2 round alan kazanır + round ışıkları ve portreler, K.O.
+      tekrarı (ağır çekim + letterbox), anonsör satırları (İLK KAN, KOMBO x3...),
+      coşan kalabalık (hype'a göre sallanır, kollar havaya kalkar)
 - [ ] Sprint 5 — Juice ve sunum
 - [ ] Sprint 6 — Kariyer modu *(tam oyun döngüsü)*
