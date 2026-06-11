@@ -6,6 +6,8 @@ Tasarım ve sprint planı için bkz. [PLAN.md](PLAN.md).
 ## Nasıl çalıştırılır
 
 Kurulum gerekmez: `index.html` dosyasını tarayıcıda aç, hepsi bu.
+Menüden **TEK OYUNCU** (stil kişilikli AI rakibe karşı) veya **IKI OYUNCU**
+(aynı klavyede) seç.
 
 ## Kontroller
 
@@ -40,7 +42,7 @@ Güreş (ezici tutuş + yüksek can), Dövüş Sanatları (hız + momentum), Sub
 ## Testler
 
 ```
-node --test test/combat.test.js
+node --test test/combat.test.js test/ai.test.js
 ```
 
 ## Durum
@@ -56,6 +58,8 @@ node --test test/combat.test.js
 - [x] **Sprint 3 — Stiller, momentum, BLAZIN, koşu:** 5 dövüş stili + seçim ekranı,
       momentum barı, BLAZIN modu + ağır çekim/zoom'lu özel hareket, BLAZIN K.O. finişi,
       çift dokunuş koşusu + dalış yumruğu / uçan tekme
-- [ ] Sprint 4 — AI rakip
+- [x] **Sprint 4 — AI rakip:** stil bazlı kişilikler (Güreş tutma arar, Kickbox baskı kurar,
+      Dövüş Sanatları blok/sabır oynar...), insansı reaksiyon gecikmesi ve hata payı,
+      BLAZIN kullanımı, tutuşta duvara fırlatma zekâsı, tek oyunculu mod
 - [ ] Sprint 5 — Juice ve sunum
 - [ ] Sprint 6 — Kariyer modu *(tam oyun döngüsü)*

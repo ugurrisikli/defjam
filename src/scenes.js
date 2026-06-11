@@ -2,11 +2,21 @@ window.Game = window.Game || {};
 
 Game.scenes = {};
 Game.matchStyles = { p1: 'sokak', p2: 'sokak' };
+Game.matchMode = 'ai'; // 'ai' = tek oyuncu, '2p' = iki oyuncu
 
 // ----- ANA MENÜ -----
 Game.scenes.menu = {
+  enter() {
+    this.sel = 0;
+  },
   update() {
-    if (Game.Input.wasPressed('Enter')) Game.changeScene('select');
+    const I = Game.Input;
+    if (I.wasPressed('KeyW') || I.wasPressed('ArrowUp')) this.sel = (this.sel + 1) % 2;
+    if (I.wasPressed('KeyS') || I.wasPressed('ArrowDown')) this.sel = (this.sel + 1) % 2;
+    if (I.wasPressed('Enter')) {
+      Game.matchMode = this.sel === 0 ? 'ai' : '2p';
+      Game.changeScene('select');
+    }
   },
   render(ctx, canvas) {
     const W = canvas.width;
@@ -27,11 +37,16 @@ Game.scenes.menu = {
     ctx.fillStyle = '#8a8a9a';
     ctx.fillText('Yeralti dövüs arenasina hosgeldin', W / 2, 195);
 
-    if (Math.floor(Game.time * 2) % 2 === 0) {
-      ctx.font = 'bold 28px monospace';
-      ctx.fillStyle = '#ffd27a';
-      ctx.fillText('BASLA — ENTER', W / 2, 270);
+    const opts = ['TEK OYUNCU', 'IKI OYUNCU'];
+    for (let i = 0; i < opts.length; i++) {
+      const selected = this.sel === i;
+      ctx.font = 'bold 26px monospace';
+      ctx.fillStyle = selected ? '#ffd27a' : '#55556a';
+      ctx.fillText((selected ? '> ' : '') + opts[i] + (selected ? ' <' : ''), W / 2, 258 + i * 38);
     }
+    ctx.font = '15px monospace';
+    ctx.fillStyle = '#8a8a9a';
+    ctx.fillText('W/S seç · ENTER basla', W / 2, 330);
 
     ctx.font = '14px monospace';
     ctx.fillStyle = '#55556a';
@@ -53,6 +68,12 @@ Game.scenes.select = {
     this.startDelay = 0;
     // önceki ekrandan tasinan Enter basisinin P2'yi aninda onaylamasini önler
     this.inputCooldown = 0.15;
+    this.aiMode = Game.matchMode === 'ai';
+    if (this.aiMode) {
+      // rakip stilini kendisi seçer
+      this.i2 = Math.floor(Math.random() * Game.STYLE_KEYS.length);
+      this.lock2 = true;
+    }
   },
   update(dt) {
     const I = Game.Input;
@@ -66,11 +87,13 @@ Game.scenes.select = {
       if (I.wasPressed('KeyJ')) this.lock1 = true;
     } else if (I.wasPressed('KeyK')) this.lock1 = false;
 
-    if (!this.lock2) {
-      if (I.wasPressed('ArrowLeft')) this.i2 = (this.i2 + n - 1) % n;
-      if (I.wasPressed('ArrowRight')) this.i2 = (this.i2 + 1) % n;
-      if (I.wasPressed('Enter')) this.lock2 = true;
-    } else if (I.wasPressed('Period')) this.lock2 = false;
+    if (!this.aiMode) {
+      if (!this.lock2) {
+        if (I.wasPressed('ArrowLeft')) this.i2 = (this.i2 + n - 1) % n;
+        if (I.wasPressed('ArrowRight')) this.i2 = (this.i2 + 1) % n;
+        if (I.wasPressed('Enter')) this.lock2 = true;
+      } else if (I.wasPressed('Period')) this.lock2 = false;
+    }
 
     if (this.lock1 && this.lock2) {
       this.startDelay += dt;
@@ -157,14 +180,19 @@ Game.scenes.select = {
       if (sel2) {
         ctx.fillStyle = '#2d9de8';
         ctx.font = 'bold 13px monospace';
-        ctx.fillText(this.lock2 ? 'P2 HAZIR' : 'P2', x + cardW / 2, y + cardH + (sel1 ? 42 : 22));
+        const tag = this.aiMode ? 'RAKIP' : this.lock2 ? 'P2 HAZIR' : 'P2';
+        ctx.fillText(tag, x + cardW / 2, y + cardH + (sel1 ? 42 : 22));
       }
       x += cardW + gap;
     }
 
     ctx.font = '15px monospace';
     ctx.fillStyle = '#55556a';
-    ctx.fillText('P1: A/D seç · J onayla · K geri al     P2: ←/→ seç · ENTER onayla · . geri al', W / 2, H - 40);
+    if (this.aiMode) {
+      ctx.fillText('A/D seç · J onayla · K geri al — rakibin stilini kendisi seçti', W / 2, H - 40);
+    } else {
+      ctx.fillText('P1: A/D seç · J onayla · K geri al     P2: ←/→ seç · ENTER onayla · . geri al', W / 2, H - 40);
+    }
     if (this.lock1 && this.lock2) {
       ctx.font = 'bold 24px monospace';
       ctx.fillStyle = '#ffd27a';
@@ -180,10 +208,12 @@ Game.scenes.match = {
       name: 'OYUNCU 1', x: 320, facing: 1, color: '#e8512d', accent: '#ffd27a',
       style: Game.matchStyles.p1,
     });
+    const aiMode = Game.matchMode === 'ai';
     this.p2 = new Game.Fighter({
-      name: 'OYUNCU 2', x: 640, facing: -1, color: '#2d9de8', accent: '#aef3ff',
+      name: aiMode ? 'RAKIP' : 'OYUNCU 2', x: 640, facing: -1, color: '#2d9de8', accent: '#aef3ff',
       style: Game.matchStyles.p2,
     });
+    this.ai = aiMode ? new Game.AI(this.p2, { difficulty: 0.55 }) : null;
     this.phase = 'intro'; // intro -> fight -> over
     this.phaseTime = 0;
     this.hitstop = 0;
@@ -240,12 +270,14 @@ Game.scenes.match = {
       grapple: I.wasPressed('KeyL'), block: I.isDown('KeyS'),
       blazin: I.wasPressed('Space'),
     };
-    const in2 = {
-      left: I.isDown('ArrowLeft'), right: I.isDown('ArrowRight'), jump: I.isDown('ArrowUp'),
-      punch: I.wasPressed('Comma'), kick: I.wasPressed('Period'),
-      grapple: I.wasPressed('Slash'), block: I.isDown('ArrowDown'),
-      blazin: I.wasPressed('ShiftRight'),
-    };
+    const in2 = this.ai
+      ? this.ai.update(gdt, this.p1)
+      : {
+          left: I.isDown('ArrowLeft'), right: I.isDown('ArrowRight'), jump: I.isDown('ArrowUp'),
+          punch: I.wasPressed('Comma'), kick: I.wasPressed('Period'),
+          grapple: I.wasPressed('Slash'), block: I.isDown('ArrowDown'),
+          blazin: I.wasPressed('ShiftRight'),
+        };
     this.p1.update(gdt, in1);
     this.p2.update(gdt, in2);
 
